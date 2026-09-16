@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import type { MatchedProgram } from "@/types/domain";
 import ScoreBadge from "@/components/ScoreBadge";
 import { STATUS_TOKENS } from "@/lib/config/statusColors";
@@ -59,24 +62,58 @@ function ScholarshipIcon() {
 export default function SchoolCard({ school }: { school: MatchedProgram }) {
   const matchToken = STATUS_TOKENS[school.matchLevel];
   const tierLabel = school.rankingTier !== "unknown" ? RANKING_TIER_LABELS[school.rankingTier] : null;
+  const [zoomed, setZoomed] = useState(false);
+
+  useEffect(() => {
+    if (!zoomed) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomed(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [zoomed]);
 
   return (
     <div className="overflow-hidden rounded-xl" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-      {/* Image banner (mục 6.10.1) + Logo góc trên-trái + Budget pill góc trên-phải (AC9/AC10) */}
+      {/* Image banner (mục 6.10.1) + Budget pill góc trên-phải (AC9) — bấm ảnh để zoom to */}
       <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={school.image.imageUrl} alt="" className="h-28 w-full object-cover" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={school.logo.logoUrl}
-          alt={`Logo ${school.university}`}
-          className="absolute left-3 top-3 h-11 w-11 rounded-lg border-2 object-cover shadow"
-          style={{ borderColor: "var(--momo-bg-default)" }}
-        />
+        <button
+          type="button"
+          onClick={() => setZoomed(true)}
+          className="block h-28 w-full cursor-zoom-in"
+          aria-label={`Xem ảnh lớn ${school.university}`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={school.image.imageUrl} alt="" className="h-28 w-full object-cover" />
+        </button>
         <div className="absolute right-3 top-3">
           <BudgetPill school={school} />
         </div>
       </div>
+
+      {zoomed && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={() => setZoomed(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={school.image.imageUrl}
+            alt={school.university}
+            className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+          />
+          <button
+            type="button"
+            onClick={() => setZoomed(false)}
+            aria-label="Đóng"
+            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full text-lg"
+            style={{ background: "var(--momo-bg-default)", color: "var(--momo-text-default)" }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
