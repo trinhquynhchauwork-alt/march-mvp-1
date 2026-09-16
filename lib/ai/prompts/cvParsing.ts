@@ -1,4 +1,4 @@
-import { groq, GROQ_TEXT_MODEL } from "@/lib/ai/groqClient";
+import { completeJson } from "@/lib/ai/aiClient";
 import { callAiJson, type AiJsonResult } from "@/lib/ai/withRetry";
 import { cvParseRawSchema } from "@/lib/validation/schemas";
 import type { CvParseRaw } from "@/types/domain";
@@ -24,7 +24,9 @@ Chỉ trả về một object JSON đúng schema sau, không markdown, không gi
   "gpa": number | null,
   "gpa_scale": number | null,
   "english": { "type": "IELTS" | "TOEFL" | null, "score": number | null } | null,
-  "german": { "type": "Goethe" | "TestDaF" | "DSH" | "telc" | null, "level": "A1" | "A2" | "B1" | "B2" | "C1" | "C2" | null } | null,
+  "german": { "type": "Goethe" | "TestDaF" | "DSH" | "telc" | null, "level": string | null } | null,
+  // "level" là trình độ GỐC của chứng chỉ: với Goethe/telc dùng CEFR ("A1".."C2");
+  // với TestDaF dùng thang TDN ("TDN 3", "TDN 4", "TDN 5"); với DSH dùng ("DSH-1", "DSH-2", "DSH-3").
   "academic_certificates": [ { "name": string | null, "score": string | null } ] | null,
   "major": string[] | null,
   "experience": string | null,
@@ -33,15 +35,9 @@ Chỉ trả về một object JSON đúng schema sau, không markdown, không gi
 }`;
 
 export async function parseCvWithAi(cvText: string): Promise<AiJsonResult<CvParseRaw>> {
-  return callAiJson("cv_parse", async () => {
-    const completion = await groq.chat.completions.create({
-      model: GROQ_TEXT_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: JSON.stringify({ cv_text: cvText }) },
-      ],
-    });
-    return completion.choices[0]?.message?.content ?? "";
-  }, cvParseRawSchema);
+  return callAiJson(
+    "cv_parse",
+    () => completeJson(SYSTEM_PROMPT, JSON.stringify({ cv_text: cvText })),
+    cvParseRawSchema
+  );
 }

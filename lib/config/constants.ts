@@ -1,12 +1,12 @@
-// Hằng số Đức — cập nhật hàng năm, gom một chỗ duy nhất (spec mục 4.6 bản cũ).
+// Hằng số Đức — cập nhật hàng năm, gom một chỗ duy nhất.
 // Nguồn: DAAD / Auswärtiges Amt. Review lại mỗi năm.
 
-export const GERMANY_VISA_PROOF_EUR = 11904; // Sperrkonto 2026
-export const GERMANY_LIVING_MID_EUR = 14400; // chi phí sinh hoạt trung bình/năm (~1.200€/tháng)
-export const GERMANY_LIVING_HIGH_EUR = 18000; // chi phí thành phố đắt (Munich/Frankfurt)
+// Cost of Living Reference (mục 6.8.2) — 1 mức trung bình toàn quốc cho MVP.
+// Spec v2 nói rõ "spec này không tự chốt con số, chỉ chốt cơ chế" — dùng đúng giá trị
+// ví dụ trong spec (mục 6.8.4: livingCostPerYearEur: 11400) làm mặc định. CẦN đội
+// Product/Content xác nhận trước khi launch thật.
+export const COST_OF_LIVING_EUR_PER_YEAR = 11400;
 
-// Tỷ giá tĩnh (MVP không gọi API tỷ giá động — xem trade-off đã thống nhất với user).
-export const VND_EUR_RATE = 27000; // 1 EUR ≈ 27,000 VND
-
-export const AI_MAX_CALLS_PER_SESSION = 3;
+// v4 (mục 3.3/9): School Search AI call đã bị loại bỏ — còn CV Parse + Insight.
+export const AI_MAX_CALLS_PER_SESSION = 2;
 export const AI_RETRY_COUNT = 1;

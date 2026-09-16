@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
+/* MoMo Design System v1.0.0 — mục 3.6. Đây là bảng token BẮT BUỘC (mục 3.6/AC-DS1/AC-DS2) —
+   không tự tạo hex/font-size mới ngoài danh sách này. */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #303233;
+
+  /* 3.6.1 Color Mapping */
+  --momo-brand-primary: #eb2f96;
+  --momo-brand-primary-tonal: #fdeaf4;
+  --momo-brand-primary-dark: #c02880;
+
+  --momo-success: #52c41a;
+  --momo-success-container: #f0fae6;
+  --momo-warning: #fa8c16;
+  --momo-warning-container: #fff7e6;
+  --momo-error: #f5222d;
+  --momo-error-container: #fff1f0;
+  --momo-interactive: #3763ae;
+  --momo-interactive-container: #ebf3fb;
+
+  --momo-bg-default: #ffffff;
+  --momo-bg-surface: #f2f2f6;
+  --momo-bg-tonal: #fdeaf4;
+
+  --momo-text-default: #303233;
+  --momo-text-secondary: #727272;
+  --momo-text-hint: #999999;
+  --momo-text-disabled: #c6c6c6;
+
+  --momo-border-default: #e6e6e6;
+  --momo-border-focus: #eb2f96;
 }
 
 @theme inline {
@@ -13,7 +41,84 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--momo-bg-surface);
+  color: var(--momo-text-default);
+  /* 3.6.5 Hard Rule: SF Pro Text/Display, fallback -apple-system/Inter — KHÔNG dùng Roboto. */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif;
+}
+
+/* 3.6.3 Typography Mapping (19 token) — size/line-height/weight cố định theo token. */
+.text-headline-l-bold {
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 700;
+}
+.text-headline-default-bold {
+  font-size: 24px;
+  line-height: 34px;
+  font-weight: 700;
+}
+.text-header-m-bold {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
+}
+.text-header-default-bold {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+}
+.text-header-s-semibold {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.text-header-xs-semibold {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+.text-body-default-regular {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.text-description-default-regular {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+.text-description-xs-regular {
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 400;
+}
+.text-label-default-medium {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.text-label-s-medium {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.text-action-default-bold {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+}
+.text-action-s-bold {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.text-action-xxs-bold {
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

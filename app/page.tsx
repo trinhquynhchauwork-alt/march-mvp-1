@@ -20,11 +20,8 @@ export default function CvInputPage() {
   }
 
   return (
-    <AppShell
-      title="CV Input — Form hồ sơ (auto-fill)"
-      meta={draft ? "✓ Đã phân tích CV" : undefined}
-    >
-      <p className="text-sm text-gray-600">
+    <AppShell title="Nhập hồ sơ" meta={draft ? "Đã phân tích CV" : undefined}>
+      <p className="text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
         Upload CV để tự động điền hồ sơ, hoặc nhập tay trực tiếp. Bạn có thể chỉnh sửa mọi dữ liệu
         trước khi submit.
       </p>
@@ -40,12 +37,7 @@ export default function CvInputPage() {
       </div>
 
       <div className="mt-6">
-        <ProfileForm
-          draft={draft}
-          hiddenExperience={hiddenExperience}
-          hiddenResearch={hiddenResearch}
-          onSubmit={handleSubmit}
-        />
+        <ProfileForm draft={draft} hiddenExperience={hiddenExperience} hiddenResearch={hiddenResearch} onSubmit={handleSubmit} />
       </div>
     </AppShell>
   );

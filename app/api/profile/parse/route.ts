@@ -3,7 +3,7 @@ import { extractTextFromPdf } from "@/lib/parsers/pdf";
 import { extractTextFromDocx } from "@/lib/parsers/docx";
 import { parseCvWithAi } from "@/lib/ai/prompts/cvParsing";
 import { normalizeGpa } from "@/lib/normalize/gpa";
-import { ENGLISH_CERT_TYPES, GERMAN_CERT_TYPES, CEFR_LEVELS } from "@/lib/config/formOptions";
+import { ENGLISH_CERT_TYPES, GERMAN_CERT_TYPES, GERMAN_LEVELS_BY_TYPE } from "@/lib/config/formOptions";
 import type { CvParseRaw, ProfileDraft } from "@/types/domain";
 
 export const runtime = "nodejs";
@@ -14,6 +14,21 @@ export const runtime = "nodejs";
 function matchEnum(value: string, options: readonly string[]): string | null {
   const lower = value.toLowerCase();
   return options.find((opt) => lower.includes(opt.toLowerCase())) ?? null;
+}
+
+// German level giờ ở thang GỐC theo từng loại chứng chỉ (Goethe/telc: CEFR; TestDaF: TDN
+// 3-5; DSH: 1-3) — thử match trực tiếp với danh sách option của đúng type trước, không
+// khớp thì thử bắt số (AI có thể trả "4" hoặc "TestDaF Niveau 4" thay vì đúng "TDN 4").
+function matchGermanLevel(type: string, rawLevel: string): string | null {
+  const options = GERMAN_LEVELS_BY_TYPE[type as keyof typeof GERMAN_LEVELS_BY_TYPE];
+  if (!options) return null;
+
+  const direct = matchEnum(rawLevel, options);
+  if (direct) return direct;
+
+  const digit = rawLevel.match(/\d/)?.[0];
+  if (!digit) return null;
+  return options.find((opt) => opt.includes(digit)) ?? null;
 }
 
 function draftFromCvParse(raw: CvParseRaw): ProfileDraft {
@@ -36,7 +51,7 @@ function draftFromCvParse(raw: CvParseRaw): ProfileDraft {
 
   if (raw.german?.type && raw.german.level) {
     const type = matchEnum(raw.german.type, GERMAN_CERT_TYPES);
-    const level = matchEnum(raw.german.level, CEFR_LEVELS);
+    const level = type ? matchGermanLevel(type, raw.german.level) : null;
     if (type && level) draft.german = { type, level };
   }
 

@@ -1,4 +1,4 @@
-import { groq, GROQ_TEXT_MODEL } from "@/lib/ai/groqClient";
+import { completeJson } from "@/lib/ai/aiClient";
 import { callAiJson, type AiJsonResult } from "@/lib/ai/withRetry";
 import { insightAiOutputSchema } from "@/lib/validation/schemas";
 import type { Profile } from "@/types/domain";
@@ -40,22 +40,13 @@ export async function generateInsightWithAi(
   profile: Profile,
   ruleScores: Record<string, unknown>
 ): Promise<AiJsonResult<InsightAiOutput>> {
-  return callAiJson("insight", async () => {
-    const completion = await groq.chat.completions.create({
-      model: GROQ_TEXT_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: JSON.stringify({
-            profile,
-            rule_scores: ruleScores,
-            target_degree: profile.targetDegree,
-          }),
-        },
-      ],
-    });
-    return completion.choices[0]?.message?.content ?? "";
-  }, insightAiOutputSchema);
+  return callAiJson(
+    "insight",
+    () =>
+      completeJson(
+        SYSTEM_PROMPT,
+        JSON.stringify({ profile, rule_scores: ruleScores, target_degree: profile.targetDegree })
+      ),
+    insightAiOutputSchema
+  );
 }

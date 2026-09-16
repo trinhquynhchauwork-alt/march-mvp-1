@@ -1,17 +1,12 @@
-function barColor(score: number): string {
-  if (score >= 80) return "bg-pink-500";
-  if (score >= 65) return "bg-violet-500";
-  if (score >= 50) return "bg-amber-500";
-  return "bg-red-500";
-}
-
+// Thanh điểm — hiển thị trạng thái tĩnh, không clickable (mục 3.5). Dùng brand.primary
+// (accent) cho thanh vì đây là chỉ báo mức độ (0-100), không phải phân loại tốt/xấu 4 mức.
 export default function ProgressBar({ score }: { score: number }) {
   const clamped = Math.max(0, Math.min(100, score));
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+    <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--momo-bg-surface)" }}>
       <div
-        className={`h-full rounded-full ${barColor(clamped)}`}
-        style={{ width: `${clamped}%` }}
+        className="h-full rounded-full"
+        style={{ width: `${clamped}%`, background: "var(--momo-brand-primary)" }}
       />
     </div>
   );

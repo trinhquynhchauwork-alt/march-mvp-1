@@ -4,24 +4,30 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
 import SchoolCard from "@/components/schools/SchoolCard";
-import { loadProfile, loadSchoolsIfMatches, saveSchools } from "@/lib/clientStorage";
-import type { MatchedSchool, Profile } from "@/types/domain";
+import { loadProfile, loadInsightIfMatches, loadSchoolsIfMatches, saveSchools } from "@/lib/clientStorage";
+import type { MatchedProgram, Profile } from "@/types/domain";
 
 export default function SchoolsPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [schools, setSchools] = useState<MatchedSchool[]>([]);
+  const [schools, setSchools] = useState<MatchedProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
+  // Major Fit (mục 6.6.2) nguồn AI Evaluation — dùng lại điểm đã tính ở Insight (giờ là
+  // field top-level InsightResult.majorFitScore, mục 7.2), không gọi thêm AI (P3 "không
+  // tính lại điểm hồ sơ", mục 1.5).
   const search = useCallback(async (p: Profile) => {
     setLoading(true);
     setMessage(null);
     try {
+      const insight = loadInsightIfMatches(p);
+      const majorFitScore = insight?.majorFitScore ?? null;
+
       const res = await fetch("/api/schools/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(p),
+        body: JSON.stringify({ profile: p, majorFitScore }),
       });
       const data = await res.json();
 
@@ -66,25 +72,29 @@ export default function SchoolsPage() {
 
   return (
     <AppShell
-      title="School Matching — Danh sách trường phù hợp"
-      meta={schools.length > 0 ? `${schools.length} chương trình · sắp xếp theo match score` : undefined}
+      title="Danh sách trường phù hợp"
+      meta={schools.length > 0 ? `${schools.length} chương trình · sắp xếp theo điểm phù hợp` : undefined}
     >
-      <p className="text-sm text-gray-600">
-        Danh sách chương trình đại học Đức phù hợp với hồ sơ, sắp xếp theo Match Score.
+      <p className="text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
+        Danh sách chương trình đại học Đức phù hợp với hồ sơ, sắp xếp theo Điểm phù hợp.
       </p>
 
-      {loading && <p className="mt-6 text-gray-600">Đang tìm chương trình phù hợp...</p>}
+      {loading && (
+        <p className="mt-6 text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
+          Đang tìm chương trình phù hợp...
+        </p>
+      )}
 
       {!loading && message && schools.length === 0 && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="mt-6 rounded-xl p-4 text-body-default-regular" style={{ background: "var(--momo-warning-container)", color: "var(--momo-warning)" }}>
           {message}
         </div>
       )}
 
       {!loading && schools.length > 0 && (
         <div className="mt-6 space-y-3">
-          {schools.map((s, i) => (
-            <SchoolCard key={`${s.university}-${s.program}-${i}`} school={s} />
+          {schools.map((s) => (
+            <SchoolCard key={s.programId} school={s} />
           ))}
         </div>
       )}
@@ -92,16 +102,18 @@ export default function SchoolsPage() {
       <div className="mt-8 flex gap-3">
         <button
           onClick={() => router.push("/")}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+          className="rounded-md px-4 py-2 text-body-default-regular"
+          style={{ border: "1px solid var(--momo-border-default)", color: "var(--momo-text-default)" }}
         >
-          Chỉnh Profile
+          Chỉnh hồ sơ
         </button>
         <button
           onClick={() => profile && search(profile)}
           disabled={loading || !profile}
-          className="flex-1 rounded-md bg-gradient-to-r from-pink-500 to-fuchsia-500 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="flex-1 rounded-md py-2.5 text-action-default-bold disabled:opacity-50"
+          style={{ background: "var(--momo-brand-primary)", color: "#ffffff" }}
         >
-          Search lại
+          Tìm lại
         </button>
       </div>
     </AppShell>

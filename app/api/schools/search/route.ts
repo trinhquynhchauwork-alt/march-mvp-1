@@ -1,90 +1,84 @@
 import { NextResponse } from "next/server";
-import { profileSchema } from "@/lib/validation/schemas";
-import { buildSearchQuery } from "@/lib/rules/searchQuery";
-import { searchSchoolsWithAi } from "@/lib/ai/prompts/schoolSearch";
-import { computeMatchScore } from "@/lib/rules/matchScore";
-import { resolveWorkingUrls } from "@/lib/validation/urlReachability";
-import type { MatchedSchool } from "@/types/domain";
+import { schoolsSearchRequestSchema } from "@/lib/validation/schemas";
+import { queryPrograms } from "@/lib/db/schoolDatabase";
+import { computeMatchScore, buildMatchSummary } from "@/lib/rules/matchScore";
+import { buildBudgetSuggestion } from "@/lib/rules/budgetSuggestion";
+import { resolveSchoolLogo, resolveSchoolImage } from "@/lib/config/universityImages";
+import type { MatchedProgram } from "@/types/domain";
 
 export const runtime = "nodejs";
 
-function isValidUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function dedupeKey(university: string, program: string): string {
-  return `${university.trim().toLowerCase()}::${program.trim().toLowerCase()}`;
-}
-
+// School Matching (mục 6, viết lại hoàn toàn ở v4) — thuần DB query trên School Database,
+// KHÔNG còn gọi AI (mục 3.3/9: "School Search" AI call đã bị loại bỏ). Major Fit tái sử
+// dụng điểm đã tính ở Insight (P2), client truyền kèm — P3 "không tính lại điểm hồ sơ"
+// (mục 1.5), và không tính lại theo từng chương trình cụ thể (mục 3.3).
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  const parsed = profileSchema.safeParse(body);
+  const parsed = schoolsSearchRequestSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
-      { ok: false, error: "Profile không hợp lệ.", details: parsed.error.flatten() },
+      { ok: false, error: "Request không hợp lệ.", details: parsed.error.flatten() },
       { status: 400 }
     );
   }
 
-  const profile = parsed.data;
-  const query = buildSearchQuery(profile);
+  const { profile, majorFitScore } = parsed.data;
 
-  // Search Failed / Retry Failed (mục 6.11): retry đã nằm trong searchSchoolsWithAi.
-  // Nếu vẫn lỗi -> trả empty list, không crash (AC4).
-  const aiResult = await searchSchoolsWithAi(query, profile);
+  // Query Builder (mục 6.2/6.3): Target Degree + Interested Major (đã chuẩn hóa theo Supported
+  // Major Taxonomy ở form, mục 4.4) — nếu chọn nhiều Major, hợp nhất kết quả, loại trùng theo
+  // Program.id (đã xử lý trong queryPrograms).
+  const programs = queryPrograms({
+    degree: profile.targetDegree,
+    majorCategories: profile.interestedMajors,
+  });
 
-  if (!aiResult.ok) {
+  // DB Query trả về rỗng (mục 6.14) — không phải lỗi, catalog chưa có chương trình khớp.
+  if (programs.length === 0) {
     return NextResponse.json({
       ok: true,
       schools: [],
-      message: "Không tìm thấy chương trình phù hợp.",
+      message:
+        "March hiện chưa có chương trình phù hợp với lựa chọn của bạn trong catalog. Catalog đang được mở rộng liên tục — bạn có thể thử điều chỉnh ngành quan tâm hoặc quay lại sau.",
     });
   }
 
-  // Program Validation (mục 6.5): bắt buộc university + program + official_url hợp lệ.
-  const seen = new Set<string>();
-  const candidates: { university: string; program: string; officialUrl: string }[] = [];
+  const schools: MatchedProgram[] = programs.map((program) => {
+    const { matchScore, matchLevel, matchLevelExplanation, verdictLine, fitBreakdown } = computeMatchScore(
+      profile,
+      program,
+      majorFitScore
+    );
+    const summary = buildMatchSummary(profile, program, majorFitScore);
+    const budgetSuggestion = buildBudgetSuggestion(program.tuitionFeePerYearEur);
+    const logo = resolveSchoolLogo(program.university, program.logo);
+    const image = resolveSchoolImage(program.university, program.image);
 
-  for (const candidate of aiResult.data) {
-    const university = candidate.university?.trim();
-    const program = candidate.program?.trim();
-    const officialUrl = candidate.official_url?.trim();
+    return {
+      programId: program.id,
+      university: program.university,
+      program: program.program,
+      officialUrl: program.officialUrl,
+      matchScore,
+      matchLevel,
+      matchLevelExplanation,
+      verdictLine,
+      rankingTier: program.rankingTier,
+      fitBreakdown,
+      summary,
+      budgetSuggestion,
+      scholarships: program.scholarships,
+      logo,
+      image,
+      lastVerifiedAt: program.lastVerifiedAt,
+    };
+  });
 
-    if (!university || !program || !officialUrl || !isValidUrl(officialUrl)) continue;
-
-    const key = dedupeKey(university, program);
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    candidates.push({ university, program, officialUrl });
-  }
-
-  // Xác thực URL (AI có web search thật nhưng vẫn có thể tự ghép sai một deep link cụ thể):
-  // link chết -> thử fallback domain gốc của chính trường đó; chỉ loại hẳn khi cả hai đều
-  // chết. Giới hạn concurrency để tránh bị site chặn hàng loạt do burst traffic.
-  const resolvedUrls = await resolveWorkingUrls(candidates.map((c) => c.officialUrl));
-  const droppedCount = resolvedUrls.filter((u) => u === null).length;
-  if (droppedCount > 0) {
-    console.warn(`[schools/search] dropped ${droppedCount}/${candidates.length} unreachable official_url`);
-  }
-
-  const schools: MatchedSchool[] = candidates
-    .map((c, i) => ({ ...c, officialUrl: resolvedUrls[i] }))
-    .filter((c): c is { university: string; program: string; officialUrl: string } => c.officialUrl !== null)
-    .map((c) => ({ ...c, ...computeMatchScore(profile, c) }));
-
-  // Sorting (mục 6.9): Match Score giảm dần, sau đó University Name A-Z.
+  // Sorting (mục 6.11/6.12): Match Score giảm dần, sau đó University Name A-Z.
   schools.sort((a, b) => b.matchScore - a.matchScore || a.university.localeCompare(b.university));
 
   return NextResponse.json({
     ok: true,
     schools: schools.slice(0, 10),
-    message: schools.length === 0 ? "Không tìm thấy chương trình phù hợp." : undefined,
   });
 }

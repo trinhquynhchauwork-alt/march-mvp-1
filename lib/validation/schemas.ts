@@ -37,11 +37,10 @@ export const profileSchema = z
     english: certificateSchema.optional(),
     german: certificateSchema.optional(),
     academicCertificates: z.array(academicCertificateSchema).default([]),
-    annualBudget: z.object({
-      vnd: z.number().positive(),
-      eur: z.number().positive(),
-    }),
-    interestedMajors: z.array(z.string()).min(1, "Phải chọn tối thiểu một ngành"),
+    interestedMajors: z
+      .array(z.string())
+      .min(1, "Phải chọn tối thiểu một ngành")
+      .max(3, "Chỉ được chọn tối đa 3 ngành"),
     expectedIntake: z.string().optional(),
     activities: z.string().optional(),
     experience: z.string().optional(),
@@ -86,17 +85,14 @@ export const insightAiOutputSchema = z.object({
   leadership: softCriterionSchema,
   major_fit: softCriterionSchema,
   overall_comment: z.string(),
-  // Spec muốn 3–5 next actions, nhưng không fail cả response (tốn 1 trong 3 AI call quota)
+  // Spec muốn 3–5 next actions, nhưng không fail cả response (tốn 1 trong 2 AI call quota)
   // nếu model lệch 1 item — route handler sẽ clamp về tối đa 5 khi merge.
   next_actions: z.array(z.string()).min(1),
 });
 
-// --- AI School Search output (mục 9) ---
+// --- /schools/search request (mục 8, v4 — thuần DB query, không còn AI School Search) ---
 
-export const schoolSearchAiOutputSchema = z.array(
-  z.object({
-    university: z.string().nullable().optional(),
-    program: z.string().nullable().optional(),
-    official_url: z.string().nullable().optional(),
-  })
-);
+export const schoolsSearchRequestSchema = z.object({
+  profile: profileSchema,
+  majorFitScore: z.number().min(0).max(100).nullable(),
+});

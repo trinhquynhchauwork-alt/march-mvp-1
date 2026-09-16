@@ -4,13 +4,19 @@ import ProgressBar from "@/components/ProgressBar";
 
 export default function CriterionCard({ criterion }: { criterion: Criterion }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-900">{CRITERION_LABELS[criterion.id]}</h3>
+        <h3 className="text-body-default-regular" style={{ color: "var(--momo-text-default)", fontWeight: 500 }}>
+          {CRITERION_LABELS[criterion.id]}
+        </h3>
         {criterion.status === "evaluated" && criterion.score != null ? (
-          <span className="text-lg font-semibold text-gray-900">{criterion.score}</span>
+          <span className="text-header-default-bold" style={{ color: "var(--momo-text-default)" }}>
+            {criterion.score}
+          </span>
         ) : (
-          <span className="text-xs font-medium text-gray-400">Chưa đánh giá</span>
+          <span className="text-description-default-regular" style={{ color: "var(--momo-text-hint)" }}>
+            Chưa đánh giá
+          </span>
         )}
       </div>
 
@@ -18,15 +24,19 @@ export default function CriterionCard({ criterion }: { criterion: Criterion }) {
         {criterion.status === "evaluated" && criterion.score != null ? (
           <ProgressBar score={criterion.score} />
         ) : (
-          <div className="h-1.5 w-full rounded-full bg-gray-100" />
+          <div className="h-1.5 w-full rounded-full" style={{ background: "var(--momo-bg-surface)" }} />
         )}
       </div>
 
       {criterion.status === "evaluated" && criterion.comment && (
-        <p className="mt-2 text-sm text-gray-600">{criterion.comment}</p>
+        <p className="mt-2 text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
+          {criterion.comment}
+        </p>
       )}
       {criterion.status === "not_evaluated" && (
-        <p className="mt-2 text-sm text-gray-400">Chưa đủ dữ liệu để đánh giá tiêu chí này.</p>
+        <p className="mt-2 text-body-default-regular" style={{ color: "var(--momo-text-hint)" }}>
+          Chưa đủ dữ liệu để đánh giá tiêu chí này.
+        </p>
       )}
     </div>
   );
