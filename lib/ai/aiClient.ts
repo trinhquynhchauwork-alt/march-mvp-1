@@ -14,13 +14,14 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
-// Provider chọn qua AI_PROVIDER=groq|deepseek (mặc định "groq"). Key DeepSeek user cung cấp
-// khi yêu cầu chuyển sang v4 đã được test trực tiếp (1 request thô, ngoài code này) tới
-// https://api.deepseek.com — trả về 401 "invalid api key". Định dạng key (`sk-proj-...`)
-// cũng khớp key OpenAI hơn là key DeepSeek thông thường (`sk-...` không có `-proj-`) — nhiều
-// khả năng dán nhầm key OpenAI hoặc key đã hết hạn/copy thiếu ký tự, CẦN xác nhận lại với
-// user trước khi dùng thật. Giữ Groq (key hiện tại đang hoạt động) làm mặc định để app không
-// bị gãy; đổi AI_PROVIDER=deepseek trong .env.local sau khi có key DeepSeek hợp lệ.
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+
+// Provider chọn qua AI_PROVIDER=groq|deepseek|openai (mặc định "groq"). Key user đưa lúc
+// chuyển sang v4 có định dạng `sk-proj-...` — đã test trực tiếp và xác nhận đây là key OpenAI
+// hợp lệ (không phải DeepSeek như dự đoán ban đầu, DeepSeek trả 401 với key này). Vì vậy thêm
+// hẳn provider "openai" thay vì ép dùng qua endpoint DeepSeek.
 const AI_PROVIDER = (process.env.AI_PROVIDER ?? "groq").toLowerCase();
 
 async function completeWithDeepSeek(systemPrompt: string, userContent: string): Promise<string> {
@@ -48,6 +49,31 @@ async function completeWithDeepSeek(systemPrompt: string, userContent: string): 
   return data.choices?.[0]?.message?.content ?? "";
 }
 
+async function completeWithOpenAI(systemPrompt: string, userContent: string): Promise<string> {
+  if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY chưa được cấu hình trong .env.local.");
+
+  const res = await fetch(OPENAI_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`OpenAI API lỗi ${res.status}: ${text.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
 async function completeWithGroq(systemPrompt: string, userContent: string): Promise<string> {
   const completion = await groq.chat.completions.create({
     model: GROQ_TEXT_MODEL,
@@ -63,5 +89,7 @@ async function completeWithGroq(systemPrompt: string, userContent: string): Prom
 // Dùng chung cho cả 2 AI call (CV Parsing, Insight) — cả hai đều yêu cầu structured JSON
 // output (mục 15.3). Timeout/retry xử lý ở lib/ai/withRetry.ts, không phải ở đây.
 export async function completeJson(systemPrompt: string, userContent: string): Promise<string> {
-  return AI_PROVIDER === "deepseek" ? completeWithDeepSeek(systemPrompt, userContent) : completeWithGroq(systemPrompt, userContent);
+  if (AI_PROVIDER === "deepseek") return completeWithDeepSeek(systemPrompt, userContent);
+  if (AI_PROVIDER === "openai") return completeWithOpenAI(systemPrompt, userContent);
+  return completeWithGroq(systemPrompt, userContent);
 }
