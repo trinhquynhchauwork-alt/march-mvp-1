@@ -13,7 +13,7 @@ import { normalizeGpa } from "@/lib/normalize/gpa";
 import ProgressIndicator, { type RequiredFieldStatus } from "@/components/cv-input/ProgressIndicator";
 import type { AcademicCertificate, Profile, ProfileDraft } from "@/types/domain";
 
-const MAX_MAJORS = 3;
+const MAX_MAJORS = 1;
 
 interface FormState {
   currentEducation: string;
@@ -125,6 +125,7 @@ export default function ProfileForm({
       if (prev.interestedMajors.includes(major)) {
         return { ...prev, interestedMajors: prev.interestedMajors.filter((m) => m !== major) };
       }
+      if (MAX_MAJORS === 1) return { ...prev, interestedMajors: [major] };
       if (prev.interestedMajors.length >= MAX_MAJORS) return prev;
       return { ...prev, interestedMajors: [...prev.interestedMajors, major] };
     });
@@ -433,12 +434,12 @@ export default function ProfileForm({
       {/* Ngành quan tâm — bắt buộc, đặt sau khi đã nhập xong thông tin định lượng (mục 4.2.2) */}
       <div ref={majorsRef} tabIndex={-1}>
         <label className={LABEL_CLASS} style={LABEL_STYLE}>
-          Ngành quan tâm — chọn tối đa {MAX_MAJORS} <span style={{ color: "var(--momo-brand-primary)" }}>*</span>
+          Ngành quan tâm <span style={{ color: "var(--momo-brand-primary)" }}>*</span>
         </label>
         <div className="mt-1.5 flex flex-wrap gap-2">
           {MAJOR_OPTIONS.map((major) => {
             const selected = form.interestedMajors.includes(major);
-            const disabled = !selected && form.interestedMajors.length >= MAX_MAJORS;
+            const disabled = MAX_MAJORS === 1 ? false : !selected && form.interestedMajors.length >= MAX_MAJORS;
             return (
               <button
                 type="button"

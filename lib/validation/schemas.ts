@@ -39,8 +39,8 @@ export const profileSchema = z
     academicCertificates: z.array(academicCertificateSchema).default([]),
     interestedMajors: z
       .array(z.string())
-      .min(1, "Phải chọn tối thiểu một ngành")
-      .max(3, "Chỉ được chọn tối đa 3 ngành"),
+      .min(1, "Phải chọn một ngành")
+      .max(1, "Chỉ được chọn một ngành"),
     expectedIntake: z.string().optional(),
     activities: z.string().optional(),
     experience: z.string().optional(),

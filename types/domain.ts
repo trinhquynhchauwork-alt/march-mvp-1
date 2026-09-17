@@ -39,7 +39,7 @@ export interface Profile {
 
   academicCertificates: AcademicCertificate[];
 
-  interestedMajors: string[]; // tối đa 3 (mục 4.4 Input Rules)
+  interestedMajors: string[]; // chỉ chọn 1 ngành (deviation so với mục 4.4 gốc, theo yêu cầu user)
 
   expectedIntake?: string;
   activities?: string;

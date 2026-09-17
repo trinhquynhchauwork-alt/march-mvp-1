@@ -31,11 +31,4 @@ export const MAJOR_OPTIONS = [
   "Mechanical Engineering",
   "Electrical Engineering",
   "Civil Engineering",
-  "Architecture",
-  "Medicine",
-  "Natural Sciences",
-  "Design",
-  "Law",
-  "Social Sciences",
-  "Arts & Humanities",
 ] as const;
