@@ -3,7 +3,16 @@ import Groq from "groq-sdk";
 // AI Layer (mục 15.3) — chỉ còn 2 call/phiên ở v4 (CV Parse, Insight, mục 3.3/9). School
 // Search AI call đã bị loại bỏ hoàn toàn — không có provider nào khác cần gọi ngoài đây.
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Groq client khởi tạo LAZY (không phải top-level) — SDK ném lỗi ngay trong constructor nếu
+// thiếu apiKey, nên nếu tạo unconditionally ở module scope thì deploy sẽ FAIL ngay lúc build
+// (Next.js "collect page data") dù AI_PROVIDER đang chọn openai/deepseek, không hề dùng đến
+// Groq — đã gặp thật khi deploy lên Vercel không set GROQ_API_KEY (bug 18/09).
+let groqClient: Groq | null = null;
+function getGroqClient(): Groq {
+  if (!process.env.GROQ_API_KEY) throw new Error("GROQ_API_KEY chưa được cấu hình trong .env.local.");
+  if (!groqClient) groqClient = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  return groqClient;
+}
 
 // llama-3.3-70b-versatile đã bị Groq gỡ khỏi catalog (404 model_not_found) — đổi sang
 // openai/gpt-oss-120b, model text hiện có trên Groq tại thời điểm build. Nếu Groq đổi
@@ -75,7 +84,7 @@ async function completeWithOpenAI(systemPrompt: string, userContent: string): Pr
 }
 
 async function completeWithGroq(systemPrompt: string, userContent: string): Promise<string> {
-  const completion = await groq.chat.completions.create({
+  const completion = await getGroqClient().chat.completions.create({
     model: GROQ_TEXT_MODEL,
     response_format: { type: "json_object" },
     messages: [
