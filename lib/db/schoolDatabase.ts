@@ -7,13 +7,17 @@ import type { Program } from "@/types/domain";
 // query filter, thay được bằng Postgres/SQLite thật sau này mà không đổi call site (mục 15.1).
 const PROGRAMS: Program[] = (seedData as { programs: Program[] }).programs;
 
-// Dev/demo: cho phép "draft" xuất hiện để test UI có dữ liệu (mục 15.5) — production PHẢI
-// chỉ filter "active" (mục 6.4.4). Env NODE_ENV !== "production" coi là môi trường dev/demo.
+// Dev/demo: cho phép "draft" xuất hiện để test UI có dữ liệu (mục 15.5) — chỉ khi đã thật sự
+// curate xong (mục 13.3) mới nên khoá lại còn "active". KHÔNG dùng NODE_ENV để quyết định việc
+// này — Vercel (và mọi host khác) luôn set NODE_ENV=production cho MỌI deployment, kể cả bản
+// demo cá nhân, nên trước đây catalog trống trơn ngay khi deploy dù toàn bộ seed vẫn đang
+// "draft" đúng thiết kế (bug 18/09 — chọn ngành nào trên bản live cũng ra danh sách rỗng).
+// Dùng cờ riêng, mặc định vẫn hiển thị draft cho tới khi ai đó chủ động bật cờ này lên.
 const DEV_VISIBLE_STATUSES = new Set(["draft", "active"]);
 const PROD_VISIBLE_STATUSES = new Set(["active"]);
 
 function visibleStatuses(): Set<string> {
-  return process.env.NODE_ENV === "production" ? PROD_VISIBLE_STATUSES : DEV_VISIBLE_STATUSES;
+  return process.env.RESTRICT_TO_ACTIVE_PROGRAMS === "true" ? PROD_VISIBLE_STATUSES : DEV_VISIBLE_STATUSES;
 }
 
 export interface SchoolQuery {
