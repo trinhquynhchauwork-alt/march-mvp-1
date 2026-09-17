@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
+import PageHead from "@/components/layout/PageHead";
 import ScoreBadge from "@/components/ScoreBadge";
 import ScoreDonut from "@/components/ScoreDonut";
 import CriterionCard from "@/components/insight/CriterionCard";
@@ -63,7 +64,8 @@ export default function InsightPage() {
 
   if (loading) {
     return (
-      <AppShell title="Điểm hồ sơ">
+      <AppShell>
+        <PageHead title="Đánh giá hồ sơ" description="Dựa trên chấm điểm theo quy tắc và đánh giá bổ sung từ AI." />
         <p style={{ color: "var(--momo-text-secondary)" }}>Đang phân tích hồ sơ...</p>
       </AppShell>
     );
@@ -71,7 +73,8 @@ export default function InsightPage() {
 
   if (error || !insight) {
     return (
-      <AppShell title="Điểm hồ sơ">
+      <AppShell>
+        <PageHead title="Đánh giá hồ sơ" description="Dựa trên chấm điểm theo quy tắc và đánh giá bổ sung từ AI." />
         <p style={{ color: "var(--momo-error)" }}>{error}</p>
         <button
           onClick={() => router.push("/")}
@@ -88,10 +91,17 @@ export default function InsightPage() {
   const aiCriteria = insight.criteria.filter((c) => AI_CRITERION_IDS.has(c.id));
 
   return (
-    <AppShell title="Điểm hồ sơ" meta="7 tiêu chí + điểm tổng">
+    <AppShell>
+      <PageHead
+        title="Đánh giá hồ sơ"
+        description="Dựa trên chấm điểm theo quy tắc và đánh giá bổ sung từ AI."
+        meta="7 tiêu chí + điểm tổng"
+      />
+
+      {/* Score section — full width phía trên 2-col (mục 5.14, ring thay banner chữ nhật) */}
       <div
-        className="flex flex-col items-center gap-5 rounded-xl p-6 sm:flex-row sm:items-center"
-        style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}
+        className="mb-6 flex flex-col items-center gap-5 rounded-2xl p-6 sm:flex-row sm:items-center"
+        style={{ background: "var(--momo-bg-default)", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
       >
         <ScoreDonut score={insight.overallScore} />
         <div className="text-center sm:text-left">
@@ -107,51 +117,54 @@ export default function InsightPage() {
         </div>
       </div>
 
-      {/* Khối 1 — Ưu tiên cải thiện (mục 5.14) */}
-      <div className="mt-6">
-        <PriorityCriteriaList criteria={insight.criteria} />
-      </div>
+      {/* Bố cục 2 cột (mục 5.14/5.15) — trái: Ưu tiên cải thiện + nhận xét AI; phải sticky:
+          Việc cần làm tiếp theo. Đúng march-mvp-demo-desktop.html (`.layout-2col`). */}
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-4">
+          {/* Khối 1 — Ưu tiên cải thiện (mục 5.14) */}
+          <PriorityCriteriaList criteria={insight.criteria} />
 
-      {/* Next Actions checklist + xuất file (mục 5.15) */}
-      <div className="mt-6">
-        <NextActionsChecklist
-          nextActions={insight.nextActions}
-          overallScore={insight.overallScore}
-          classification={insight.classification}
-          priorityCriteria={insight.criteria}
-        />
-      </div>
+          {/* Khối 2 — Nhận xét bổ sung từ AI, thu gọn mặc định (mục 5.14) */}
+          <details className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
+            <summary className="cursor-pointer list-none text-body-default-regular" style={{ color: "var(--momo-brand-primary)", fontWeight: 600 }}>
+              Xem nhận xét bổ sung từ AI ▾
+            </summary>
+            <p className="mt-2 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
+              Các tiêu chí dưới đây do AI đánh giá để bổ sung ngữ cảnh, không tính vào Điểm tổng.
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {aiCriteria.map((c) => (
+                <CriterionCard key={c.id} criterion={c} />
+              ))}
+            </div>
+          </details>
 
-      {/* Khối 2 — Nhận xét bổ sung từ AI, thu gọn mặc định (mục 5.14) */}
-      <details className="mt-6 rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
-        <summary className="cursor-pointer list-none text-header-m-bold" style={{ color: "var(--momo-text-default)" }}>
-          Nhận xét bổ sung từ AI
-        </summary>
-        <p className="mt-1 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
-          Các tiêu chí dưới đây do AI đánh giá để bổ sung ngữ cảnh, không tính vào Điểm tổng.
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {aiCriteria.map((c) => (
-            <CriterionCard key={c.id} criterion={c} />
-          ))}
+          <button
+            onClick={() => router.push("/schools")}
+            className="rounded-lg px-5 py-2.5 text-action-default-bold"
+            style={{ background: "var(--momo-brand-primary)", color: "#ffffff", boxShadow: "0 4px 16px rgba(235,47,150,0.24)" }}
+          >
+            Xem trường phù hợp →
+          </button>
         </div>
-      </details>
 
-      <div className="mt-8 flex gap-3">
-        <button
-          onClick={() => router.push("/")}
-          className="rounded-md px-4 py-2 text-body-default-regular"
-          style={{ border: "1px solid var(--momo-border-default)", color: "var(--momo-text-default)" }}
-        >
-          Chỉnh hồ sơ
-        </button>
-        <button
-          onClick={() => router.push("/schools")}
-          className="flex-1 rounded-md py-2.5 text-action-default-bold"
-          style={{ background: "var(--momo-brand-primary)", color: "#ffffff" }}
-        >
-          Tìm trường phù hợp
-        </button>
+        <div className="lg:sticky lg:top-24">
+          {/* Next Actions checklist + xuất file (mục 5.15) */}
+          <NextActionsChecklist
+            nextActions={insight.nextActions}
+            overallScore={insight.overallScore}
+            classification={insight.classification}
+            priorityCriteria={insight.criteria}
+          />
+
+          <button
+            onClick={() => router.push("/")}
+            className="mt-3 w-full rounded-md px-4 py-2 text-body-default-regular"
+            style={{ border: "1px solid var(--momo-border-default)", color: "var(--momo-text-default)" }}
+          >
+            Chỉnh hồ sơ
+          </button>
+        </div>
       </div>
     </AppShell>
   );

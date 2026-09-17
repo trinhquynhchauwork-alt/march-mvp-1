@@ -2,23 +2,19 @@
 
 import type { Criterion } from "@/types/domain";
 import { CRITERION_LABELS } from "@/lib/config/criterionLabels";
-import { impactBarOpacity } from "@/lib/config/statusColors";
 
 const TOOLTIP_TEXT =
-  "Đây là 3 tiêu chí có trọng số chính thức trong Overall Score. Xếp hạng theo 'Impact Score' — tiêu chí xếp #1 là tiêu chí mà cải thiện sẽ tác động nhiều nhất lên điểm tổng.";
+  "Đây là 3 tiêu chí có trọng số chính thức trong Overall Score. Xếp hạng theo 'Impact Score' — tiêu chí xếp #1 là tiêu chí mà cải thiện sẽ tác động nhiều nhất lên điểm tổng, dù điểm hiện tại của nó có thể không phải điểm thấp nhất.";
 
-// Khối "Ưu tiên cải thiện" (mục 5.14). Thanh ngang Impact Score (mục 3.6.4, v4 — "Custom
-// progress bar, brand.primary opacity giảm dần theo thứ hạng") được thêm lại có chủ đích ở
-// v4: bar mã hoá IMPACT SCORE (mức độ ảnh hưởng nếu cải thiện) bằng độ dài + opacity theo
-// rank, tách biệt rõ với con số Score (0-100) hiển thị riêng phía trên — khác bản v3 cũ đã
-// bị bỏ vì bar/label lẫn lộn 2 đại lượng khác nhau (report bug từ user, screenshot trước đó).
+// Khối "Ưu tiên cải thiện" (mục 5.14). Bỏ hẳn progress bar minh hoạ Impact Score và câu quy
+// đổi "+X điểm" (report từ user 18/09 — cả 2 cách trình bày đều bị thấy khó hiểu) — chỉ còn
+// thứ hạng + điểm hiện tại + nhận xét, đơn giản nhất có thể.
 export default function PriorityCriteriaList({ criteria }: { criteria: Criterion[] }) {
   const ruleCriteria = criteria.filter((c) => c.id === "academic" || c.id === "language" || c.id === "certificate");
   const evaluated = ruleCriteria
     .filter((c) => c.status === "evaluated" && c.impactScore != null)
     .sort((a, b) => (b.impactScore as number) - (a.impactScore as number));
   const notEvaluated = ruleCriteria.filter((c) => c.status === "not_evaluated");
-  const maxImpact = Math.max(1, ...evaluated.map((c) => c.impactScore ?? 0));
 
   return (
     <div className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
@@ -55,17 +51,7 @@ export default function PriorityCriteriaList({ criteria }: { criteria: Criterion
                 </span>
                 {CRITERION_LABELS[c.id]}
               </span>
-              <span style={{ color: "var(--momo-text-secondary)" }}>{c.score}/100</span>
-            </div>
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full" style={{ background: "var(--momo-bg-surface)" }}>
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${((c.impactScore ?? 0) / maxImpact) * 100}%`,
-                  background: "var(--momo-brand-primary)",
-                  opacity: impactBarOpacity(i + 1),
-                }}
-              />
+              <span style={{ color: "var(--momo-text-secondary)" }}>{c.score}/100 điểm hiện tại</span>
             </div>
             {c.comment && (
               <p className="mt-1 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>

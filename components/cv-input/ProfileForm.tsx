@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   CURRENT_EDUCATION_OPTIONS,
   TARGET_DEGREE_OPTIONS,
@@ -13,6 +13,7 @@ import { normalizeGpa } from "@/lib/normalize/gpa";
 import ProgressIndicator, { type RequiredFieldStatus } from "@/components/cv-input/ProgressIndicator";
 import type { AcademicCertificate, Profile, ProfileDraft } from "@/types/domain";
 
+// Chỉ chọn 1 ngành quan tâm (theo yêu cầu Product) — chip hoạt động như radio group.
 const MAX_MAJORS = 1;
 
 interface FormState {
@@ -95,11 +96,13 @@ export default function ProfileForm({
   hiddenExperience,
   hiddenResearch,
   onSubmit,
+  cvUpload,
 }: {
   draft: ProfileDraft | null;
   hiddenExperience?: string;
   hiddenResearch?: string;
   onSubmit: (profile: Profile) => void;
+  cvUpload?: ReactNode;
 }) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<string[]>([]);
@@ -122,10 +125,13 @@ export default function ProfileForm({
 
   function toggleMajor(major: string) {
     setForm((prev) => {
+      if (MAX_MAJORS === 1) {
+        // Radio-like: bấm lại mục đang chọn để bỏ chọn, bấm mục khác để thay thế lựa chọn cũ.
+        return { ...prev, interestedMajors: prev.interestedMajors.includes(major) ? [] : [major] };
+      }
       if (prev.interestedMajors.includes(major)) {
         return { ...prev, interestedMajors: prev.interestedMajors.filter((m) => m !== major) };
       }
-      if (MAX_MAJORS === 1) return { ...prev, interestedMajors: [major] };
       if (prev.interestedMajors.length >= MAX_MAJORS) return prev;
       return { ...prev, interestedMajors: [...prev.interestedMajors, major] };
     });
@@ -243,27 +249,24 @@ export default function ProfileForm({
   const germanLevelOptions = form.germanType ? GERMAN_LEVELS_BY_TYPE[form.germanType as keyof typeof GERMAN_LEVELS_BY_TYPE] : [];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Divider "hoặc nhập thủ công" (mục 4.2.2, v4.1) — Upload CV đứng trước component này */}
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1" style={{ background: "var(--momo-border-default)" }} />
-        <span className="text-description-default-regular" style={{ color: "var(--momo-text-hint)" }}>
-          hoặc nhập thủ công
-        </span>
-        <div className="h-px flex-1" style={{ background: "var(--momo-border-default)" }} />
-      </div>
+    // Bố cục 2 cột (form bên trái, tiến trình + submit sticky bên phải) đúng
+    // march-mvp-demo-desktop.html (`.layout-2col`) — form là <form> ở cấp cao nhất để nút
+    // Submit ở cột phải vẫn submit được dù nằm ngoài khối field bên trái.
+    <form onSubmit={handleSubmit} className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="space-y-5 rounded-2xl p-6" style={{ background: "var(--momo-bg-default)", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}>
+        <h2 className="text-header-m-bold" style={{ color: "var(--momo-text-default)" }}>
+          Tải CV lên
+        </h2>
+        {cvUpload}
 
-      <ProgressIndicator fields={requiredFields} />
-
-      {errors.length > 0 && (
-        <div className="rounded-lg p-3 text-body-default-regular" style={{ background: "var(--momo-error-container)", color: "var(--momo-error)" }}>
-          <ul className="list-disc pl-5">
-            {errors.map((err) => (
-              <li key={err}>{err}</li>
-            ))}
-          </ul>
+        {/* Divider "hoặc nhập thủ công" (mục 4.2.2, v4.1) — Upload CV đứng trước component này */}
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1" style={{ background: "var(--momo-border-default)" }} />
+          <span className="text-description-default-regular" style={{ color: "var(--momo-text-hint)" }}>
+            hoặc nhập thủ công
+          </span>
+          <div className="h-px flex-1" style={{ background: "var(--momo-border-default)" }} />
         </div>
-      )}
 
       {/* Block bắt buộc: Trình độ hiện tại, Bậc học mong muốn, GPA, Năm nhập học dự kiến (mục 4.2.2) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -439,7 +442,7 @@ export default function ProfileForm({
         <div className="mt-1.5 flex flex-wrap gap-2">
           {MAJOR_OPTIONS.map((major) => {
             const selected = form.interestedMajors.includes(major);
-            const disabled = MAX_MAJORS === 1 ? false : !selected && form.interestedMajors.length >= MAX_MAJORS;
+            const disabled = MAX_MAJORS > 1 && !selected && form.interestedMajors.length >= MAX_MAJORS;
             return (
               <button
                 type="button"
@@ -518,18 +521,35 @@ export default function ProfileForm({
           </div>
         </div>
       </details>
+      </div>
 
-      <div className="flex justify-end gap-3 pt-2">
+      {/* Cột phải sticky — tiến trình + checklist + Submit (mục 4.5), tách khỏi khối field
+          bên trái đúng bố cục demo, cùng nằm trong <form> nên nút Submit vẫn hoạt động. */}
+      <div className="space-y-4 lg:sticky lg:top-24">
+        <ProgressIndicator fields={requiredFields} />
+
+        {errors.length > 0 && (
+          <div className="rounded-lg p-3 text-body-default-regular" style={{ background: "var(--momo-error-container)", color: "var(--momo-error)" }}>
+            <ul className="list-disc pl-5">
+              {errors.map((err) => (
+                <li key={err}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <button
           type="submit"
-          className="rounded-lg px-5 py-2.5 text-action-default-bold transition-colors"
+          className="w-full rounded-lg px-5 py-3 text-action-default-bold transition-colors"
           style={
             allRequiredReady
-              ? { background: "var(--momo-brand-primary)", color: "#ffffff" }
-              : { background: "var(--momo-bg-surface)", color: "var(--momo-text-disabled)" }
+              ? { background: "var(--momo-brand-primary)", color: "#ffffff", boxShadow: "0 4px 16px rgba(235,47,150,0.24)" }
+              : { background: "var(--momo-bg-surface)", color: "var(--momo-text-disabled)", cursor: "not-allowed" }
           }
         >
-          Phân tích hồ sơ →
+          {allRequiredReady
+            ? "Phân tích hồ sơ →"
+            : `Hoàn thành hồ sơ (${requiredFields.filter((f) => f.state === "valid").length}/${requiredFields.length})`}
         </button>
       </div>
     </form>

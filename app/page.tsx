@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
+import PageHead from "@/components/layout/PageHead";
 import CvUpload from "@/components/cv-input/CvUpload";
 import ProfileForm from "@/components/cv-input/ProfileForm";
 import { saveProfile } from "@/lib/clientStorage";
@@ -20,25 +21,28 @@ export default function CvInputPage() {
   }
 
   return (
-    <AppShell title="Nhập hồ sơ" meta={draft ? "Đã phân tích CV" : undefined}>
-      <p className="text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
-        Upload CV để tự động điền hồ sơ, hoặc nhập tay trực tiếp. Bạn có thể chỉnh sửa mọi dữ liệu
-        trước khi submit.
-      </p>
+    <AppShell>
+      <PageHead
+        title="Nhập hồ sơ"
+        description="Tải CV lên để tự động điền, hoặc nhập thủ công bên dưới."
+        meta={draft ? "Đã phân tích CV" : undefined}
+      />
 
-      <div className="mt-4">
-        <CvUpload
-          onParsed={(d, extra) => {
-            setDraft(d);
-            setHiddenExperience(extra.experience);
-            setHiddenResearch(extra.research);
-          }}
-        />
-      </div>
-
-      <div className="mt-6">
-        <ProfileForm draft={draft} hiddenExperience={hiddenExperience} hiddenResearch={hiddenResearch} onSubmit={handleSubmit} />
-      </div>
+      <ProfileForm
+        draft={draft}
+        hiddenExperience={hiddenExperience}
+        hiddenResearch={hiddenResearch}
+        onSubmit={handleSubmit}
+        cvUpload={
+          <CvUpload
+            onParsed={(d, extra) => {
+              setDraft(d);
+              setHiddenExperience(extra.experience);
+              setHiddenResearch(extra.research);
+            }}
+          />
+        }
+      />
     </AppShell>
   );
 }

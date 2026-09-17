@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
+import PageHead from "@/components/layout/PageHead";
 import SchoolCard from "@/components/schools/SchoolCard";
 import { loadProfile, loadInsightIfMatches, loadSchoolsIfMatches, saveSchools } from "@/lib/clientStorage";
 import type { MatchedProgram, Profile } from "@/types/domain";
@@ -71,28 +72,43 @@ export default function SchoolsPage() {
   }, [router, search]);
 
   return (
-    <AppShell
-      title="Danh sách trường phù hợp"
-      meta={schools.length > 0 ? `${schools.length} chương trình · sắp xếp theo điểm phù hợp` : undefined}
-    >
-      <p className="text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
-        Danh sách chương trình đại học Đức phù hợp với hồ sơ, sắp xếp theo Điểm phù hợp.
-      </p>
+    <AppShell>
+      <PageHead
+        title="Chương trình phù hợp"
+        description="Kết quả từ kho dữ liệu trường — sắp xếp theo mức độ phù hợp."
+        meta={schools.length > 0 ? `${schools.length} chương trình · sắp xếp theo điểm phù hợp` : undefined}
+      />
+
+      {!loading && schools.length > 1 && (
+        <div
+          className="mb-5 flex items-start gap-2.5 rounded-xl p-3.5 text-body-default-regular"
+          style={{ background: "var(--momo-bg-tonal)", color: "#8a1c60" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="mt-0.5 shrink-0">
+            <circle cx="7" cy="7" r="6.25" stroke="#8a1c60" strokeWidth="1.3" />
+            <path d="M7 6.2V10.2" stroke="#8a1c60" strokeWidth="1.3" strokeLinecap="round" />
+            <circle cx="7" cy="4.1" r="0.9" fill="#8a1c60" />
+          </svg>
+          <span>
+            Các chương trình dưới đây có thể cùng ngành nhưng mức độ phù hợp khác nhau — vì mỗi trường có ngưỡng đầu vào riêng.
+          </span>
+        </div>
+      )}
 
       {loading && (
-        <p className="mt-6 text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
+        <p className="text-body-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
           Đang tìm chương trình phù hợp...
         </p>
       )}
 
       {!loading && message && schools.length === 0 && (
-        <div className="mt-6 rounded-xl p-4 text-body-default-regular" style={{ background: "var(--momo-warning-container)", color: "var(--momo-warning)" }}>
+        <div className="rounded-xl p-4 text-body-default-regular" style={{ background: "var(--momo-warning-container)", color: "var(--momo-warning)" }}>
           {message}
         </div>
       )}
 
       {!loading && schools.length > 0 && (
-        <div className="mt-6 space-y-3">
+        <div className="space-y-4">
           {schools.map((s) => (
             <SchoolCard key={s.programId} school={s} />
           ))}

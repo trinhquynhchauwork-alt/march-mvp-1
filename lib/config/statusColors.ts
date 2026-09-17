@@ -20,12 +20,3 @@ export const STATUS_TOKENS: Record<string, StatusToken> = {
   "Moderate Match": { color: "var(--momo-warning)", container: "var(--momo-warning-container)", icon: "warning" },
   "Low Match": { color: "var(--momo-error)", container: "var(--momo-error-container)", icon: "error" },
 };
-
-// Score liên tục (0-100) dùng cho Impact ranking bar (mục 3.6.4) — sequential theo
-// brand.primary, KHÔNG dùng thang Status 4 mức (đây là xếp hạng mức độ, không phải phân loại).
-export function impactBarOpacity(rank: number): number {
-  if (rank <= 0) return 1;
-  if (rank === 1) return 0.85;
-  if (rank === 2) return 0.55;
-  return 0.3;
-}
