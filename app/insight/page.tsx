@@ -18,6 +18,7 @@ export default function InsightPage() {
   const [insight, setInsight] = useState<InsightResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(true);
 
   useEffect(() => {
     const profile = loadProfile();
@@ -122,10 +123,16 @@ export default function InsightPage() {
         {/* Khối 1 — Ưu tiên cải thiện (mục 5.14) */}
         <PriorityCriteriaList criteria={insight.criteria} />
 
-        {/* Khối 2 — Nhận xét bổ sung từ AI, thu gọn mặc định (mục 5.14) */}
-        <details className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
+        {/* Khối 2 — Nhận xét bổ sung từ AI, mở sẵn mặc định (theo yêu cầu user 24/09 — trước
+            đây thu gọn mặc định), user bấm mũi tên hoặc summary để tự thu gọn lại. */}
+        <details
+          open={aiOpen}
+          onToggle={(e) => setAiOpen(e.currentTarget.open)}
+          className="rounded-xl p-4"
+          style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}
+        >
           <summary className="cursor-pointer list-none text-body-default-regular" style={{ color: "var(--momo-brand-primary)", fontWeight: 600 }}>
-            Xem nhận xét bổ sung từ AI ▾
+            {aiOpen ? "Ẩn nhận xét bổ sung từ AI ▴" : "Xem nhận xét bổ sung từ AI ▾"}
           </summary>
           <p className="mt-2 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
             Các tiêu chí dưới đây do AI đánh giá để bổ sung ngữ cảnh, không tính vào Điểm tổng.

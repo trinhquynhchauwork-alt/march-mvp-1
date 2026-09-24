@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
 import PageHead from "@/components/layout/PageHead";
 import CvUpload from "@/components/cv-input/CvUpload";
 import ProfileForm from "@/components/cv-input/ProfileForm";
-import { saveProfile } from "@/lib/clientStorage";
+import { loadProfile, saveProfile } from "@/lib/clientStorage";
 import type { Profile, ProfileDraft } from "@/types/domain";
 
 export default function CvInputPage() {
@@ -14,6 +14,19 @@ export default function CvInputPage() {
   const [draft, setDraft] = useState<ProfileDraft | null>(null);
   const [hiddenExperience, setHiddenExperience] = useState<string | undefined>();
   const [hiddenResearch, setHiddenResearch] = useState<string | undefined>();
+
+  // Khôi phục experience/research ẩn từ hồ sơ đã submit trước đó (mục bug 24/09) — các field
+  // hiển thị được ProfileForm tự khôi phục nội bộ, nhưng 2 field ngầm này chỉ tồn tại ở đây
+  // (page cha), nên phải khôi phục riêng để không mất ngữ cảnh AI khi user back lại rồi submit
+  // lại mà không upload CV mới.
+  useEffect(() => {
+    const saved = loadProfile();
+    if (!saved) return;
+    queueMicrotask(() => {
+      setHiddenExperience(saved.experience);
+      setHiddenResearch(saved.research);
+    });
+  }, []);
 
   function handleSubmit(profile: Profile) {
     saveProfile(profile);

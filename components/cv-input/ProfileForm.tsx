@@ -11,6 +11,7 @@ import {
 } from "@/lib/config/formOptions";
 import { normalizeGpa } from "@/lib/normalize/gpa";
 import ProgressIndicator, { type RequiredFieldStatus } from "@/components/cv-input/ProgressIndicator";
+import { loadProfile } from "@/lib/clientStorage";
 import type { AcademicCertificate, Profile, ProfileDraft } from "@/types/domain";
 
 // Chỉ chọn 1 ngành quan tâm (theo yêu cầu Product) — chip hoạt động như radio group.
@@ -89,6 +90,27 @@ function draftToFormState(draft: ProfileDraft): Partial<FormState> {
   return state;
 }
 
+// Khôi phục form khi quay lại P1 (mục bug 24/09) — trước đây back lại từ P2/P3 làm mất sạch
+// dữ liệu đã nhập/CV đã upload vì ProfileForm luôn mount lại từ EMPTY_FORM. Profile đã submit
+// (sessionStorage, mục 3.2) là nguồn khôi phục — khác draftToFormState (từ AI CV parse thô),
+// hàm này đọc từ Profile đã chuẩn hoá nên map thẳng 1-1, không cần validate lại enum.
+function profileToFormState(profile: Profile): Partial<FormState> {
+  return {
+    currentEducation: profile.currentEducation,
+    targetDegree: profile.targetDegree,
+    gpaOriginal: String(profile.gpa.original),
+    gpaScale: String(profile.gpa.scale),
+    expectedIntake: profile.expectedIntake ?? "",
+    englishType: profile.english?.type ?? "",
+    englishScore: profile.english?.score != null ? String(profile.english.score) : "",
+    germanType: profile.german?.type ?? "",
+    germanLevel: profile.german?.level ?? "",
+    interestedMajors: profile.interestedMajors.slice(0, MAX_MAJORS),
+    academicCertificates: profile.academicCertificates,
+    activities: profile.activities ?? "",
+  };
+}
+
 // experience/research của Profile (mục 7.1) chỉ đến từ AI CV parsing, không có ô nhập
 // riêng trong form (mục 4.4) — carry ngầm để Insight dùng, không hiển thị UI.
 export default function ProfileForm({
@@ -112,6 +134,15 @@ export default function ProfileForm({
   const targetDegreeRef = useRef<HTMLSelectElement>(null);
   const gpaRef = useRef<HTMLInputElement>(null);
   const majorsRef = useRef<HTMLDivElement>(null);
+
+  // Khôi phục hồ sơ đã submit trước đó (nếu có) khi component mount lại — vd user bấm "Chỉnh
+  // hồ sơ" từ P2/P3 quay về đây. Chỉ chạy 1 lần lúc mount, không phụ thuộc `draft` (đó là
+  // luồng khác — CV mới upload trong phiên hiện tại, xử lý ở effect bên dưới).
+  useEffect(() => {
+    const saved = loadProfile();
+    if (!saved) return;
+    queueMicrotask(() => setForm((prev) => ({ ...prev, ...profileToFormState(saved) })));
+  }, []);
 
   useEffect(() => {
     if (!draft) return;

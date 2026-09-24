@@ -2,6 +2,7 @@ import type { InsightResult, MatchedProgram } from "@/types/domain";
 import { CRITERION_LABELS } from "@/lib/config/criterionLabels";
 import { CLASSIFICATION_LABELS, MATCH_LEVEL_LABELS } from "@/lib/config/enumLabels";
 import { priorityLabelFor } from "@/lib/config/actionTags";
+import { formatScore10 } from "@/lib/config/score";
 
 // jsPDF's built-in fonts (Helvetica...) chỉ hỗ trợ WinAnsi/Latin-1 — không có dấu tiếng Việt,
 // khiến PDF xuất ra bị lỗi ký tự (report bug 24/09). Nhúng font Roboto bản "vietnamese" subset
@@ -98,7 +99,7 @@ export async function downloadReportPdf(insight: InsightResult, schools: Matched
 
   // ---------- Điểm hồ sơ ----------
   heading("Điểm hồ sơ");
-  paragraph(`Điểm tổng: ${insight.overallScore}/100 — ${CLASSIFICATION_LABELS[insight.classification]}`, { bold: true });
+  paragraph(`Điểm tổng: ${formatScore10(insight.overallScore)}/10 — ${CLASSIFICATION_LABELS[insight.classification]}`, { bold: true });
   paragraph(insight.overallComment, { color: COLOR_SECONDARY });
   y += 2;
 
@@ -111,7 +112,7 @@ export async function downloadReportPdf(insight: InsightResult, schools: Matched
     paragraph("Ưu tiên cải thiện:", { bold: true });
     rankedIds.forEach((id, i) => {
       const c = insight.criteria.find((cr) => cr.id === id);
-      paragraph(`#${i + 1} ${CRITERION_LABELS[id]} — ${c?.score ?? 0}/100`, { indent: 4, color: COLOR_SECONDARY });
+      paragraph(`#${i + 1} ${CRITERION_LABELS[id]} — ${formatScore10(c?.score ?? 0)}/10`, { indent: 4, color: COLOR_SECONDARY });
     });
     y += 2;
   }

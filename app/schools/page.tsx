@@ -100,20 +100,6 @@ export default function SchoolsPage() {
         meta={schools.length > 0 ? `${schools.length} chương trình · sắp xếp theo điểm phù hợp` : undefined}
       />
 
-      {insight && (
-        <div className="mb-5 flex justify-end">
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="rounded-lg px-4 py-2 text-action-s-bold disabled:opacity-50"
-            style={{ border: "1px solid var(--momo-brand-primary-tonal)", color: "var(--momo-brand-primary)" }}
-          >
-            {downloading ? "Đang tạo file..." : "Tải xuống (PDF)"}
-          </button>
-        </div>
-      )}
-
       {!loading && schools.length > 1 && (
         <div
           className="mb-5 flex items-start gap-2.5 rounded-xl p-3.5 text-body-default-regular"
@@ -158,7 +144,23 @@ export default function SchoolsPage() {
         </div>
       )}
 
-      <div className="mt-8 flex gap-3">
+      {/* Tải xuống — đặt cuối cùng, ngay trên CTA (theo yêu cầu user 24/09, trước đây ở đầu
+          trang). */}
+      {insight && (
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="rounded-lg px-4 py-2 text-action-s-bold disabled:opacity-50"
+            style={{ border: "1px solid var(--momo-brand-primary-tonal)", color: "var(--momo-brand-primary)" }}
+          >
+            {downloading ? "Đang tạo file..." : "Tải xuống (PDF)"}
+          </button>
+        </div>
+      )}
+
+      <div className="mt-4 flex gap-3">
         <button
           onClick={() => router.push("/")}
           className="rounded-md px-4 py-2 text-body-default-regular"

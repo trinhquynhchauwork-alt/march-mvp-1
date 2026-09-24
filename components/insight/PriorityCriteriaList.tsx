@@ -2,6 +2,7 @@
 
 import type { Criterion } from "@/types/domain";
 import { CRITERION_LABELS } from "@/lib/config/criterionLabels";
+import { formatScore10 } from "@/lib/config/score";
 
 const TOOLTIP_TEXT =
   "Đây là 3 tiêu chí có trọng số chính thức trong Overall Score. Xếp hạng theo 'Impact Score' — tiêu chí xếp #1 là tiêu chí mà cải thiện sẽ tác động nhiều nhất lên điểm tổng, dù điểm hiện tại của nó có thể không phải điểm thấp nhất.";
@@ -51,7 +52,7 @@ export default function PriorityCriteriaList({ criteria }: { criteria: Criterion
                 </span>
                 {CRITERION_LABELS[c.id]}
               </span>
-              <span style={{ color: "var(--momo-text-secondary)" }}>{c.score}/100 điểm hiện tại</span>
+              <span style={{ color: "var(--momo-text-secondary)" }}>{formatScore10(c.score ?? 0)}/10 điểm hiện tại</span>
             </div>
             {c.comment && (
               <p className="mt-1 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>

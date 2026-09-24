@@ -1,5 +1,6 @@
 import type { Criterion } from "@/types/domain";
 import { CRITERION_LABELS } from "@/lib/config/criterionLabels";
+import { formatScore10 } from "@/lib/config/score";
 import ProgressBar from "@/components/ProgressBar";
 
 export default function CriterionCard({ criterion }: { criterion: Criterion }) {
@@ -11,7 +12,7 @@ export default function CriterionCard({ criterion }: { criterion: Criterion }) {
         </h3>
         {criterion.status === "evaluated" && criterion.score != null ? (
           <span className="text-header-default-bold" style={{ color: "var(--momo-text-default)" }}>
-            {criterion.score}
+            {formatScore10(criterion.score)}/10
           </span>
         ) : (
           <span className="text-description-default-regular" style={{ color: "var(--momo-text-hint)" }}>

@@ -1,3 +1,5 @@
+import { formatScore10 } from "@/lib/config/score";
+
 // Overall Score dạng ring/donut (mục 5.14, v4.1 — thay banner chữ nhật lớn, AC-UX12).
 // Flat brand.primary, KHÔNG dùng gradient trên khối chính (Hard Rule, mục 3.6.5).
 export default function ScoreDonut({
@@ -32,10 +34,10 @@ export default function ScoreDonut({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-headline-l-bold" style={{ color: "var(--momo-text-default)" }}>
-          {Math.round(clamped)}
+          {formatScore10(clamped)}
         </span>
         <span className="text-description-xs-regular" style={{ color: "var(--momo-text-hint)" }}>
-          /100
+          /10
         </span>
       </div>
     </div>
