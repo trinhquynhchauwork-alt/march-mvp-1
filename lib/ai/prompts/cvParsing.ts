@@ -28,6 +28,11 @@ Chỉ trả về một object JSON đúng schema sau, không markdown, không gi
   // "level" là trình độ GỐC của chứng chỉ: với Goethe/telc dùng CEFR ("A1".."C2");
   // với TestDaF dùng thang TDN ("TDN 3", "TDN 4", "TDN 5"); với DSH dùng ("DSH-1", "DSH-2", "DSH-3").
   "academic_certificates": [ { "name": string | null, "score": string | null } ] | null,
+  // "major": CHỈ được chọn từ đúng 7 giá trị sau (khớp chính xác chuỗi, không dịch/diễn giải):
+  // "Computer Science", "Data Science / AI", "Business & Management", "Economics",
+  // "Mechanical Engineering", "Electrical Engineering", "Civil Engineering".
+  // Nếu ngành trong CV không rõ ràng khớp với 1 trong 7 giá trị trên, trả về null (không suy
+  // diễn/không tự ánh xạ ngành gần giống) — form sẽ để trống cho user tự chọn tay.
   "major": string[] | null,
   "experience": string | null,
   "research": string | null,

@@ -84,7 +84,15 @@ function draftToFormState(draft: ProfileDraft): Partial<FormState> {
     state.germanLevel = draft.german.level;
   }
   if (draft.academicCertificates) state.academicCertificates = draft.academicCertificates;
-  if (draft.interestedMajors) state.interestedMajors = draft.interestedMajors.slice(0, MAX_MAJORS);
+  if (draft.interestedMajors) {
+    // Bug 24/09: AI parse CV có thể trả tên ngành không khớp đúng 7 lựa chọn (vd "Kinh doanh"
+    // thay vì "Business & Management") — set thẳng vào form.interestedMajors khiến required-
+    // check thấy "đã chọn" (length > 0) dù KHÔNG có chip nào sáng lên, cho qua Submit dù user
+    // chưa thật sự chọn gì. Lọc lại theo đúng MAJOR_OPTIONS, giống cách currentEducation đã
+    // làm — không suy diễn/ép giá trị lạ vào (mục 4.7: AI không suy diễn).
+    const valid = draft.interestedMajors.filter((m) => (MAJOR_OPTIONS as readonly string[]).includes(m));
+    if (valid.length > 0) state.interestedMajors = valid.slice(0, MAX_MAJORS);
+  }
   if (draft.activities) state.activities = draft.activities;
 
   return state;
