@@ -10,10 +10,10 @@ import { formatScore10 } from "@/lib/config/score";
 const FONT_REGULAR_URL = "/fonts/Roboto-Regular.ttf";
 const FONT_BOLD_URL = "/fonts/Roboto-Bold.ttf";
 
+// Chỉ 2 màu chữ (theo yêu cầu user 24/09 — bản trước dùng thêm 2 sắc xám phụ trông rối/xấu):
+// hồng cho Title/số liệu nổi bật, đen cho toàn bộ nội dung còn lại.
 const COLOR_PRIMARY: [number, number, number] = [235, 47, 150];
-const COLOR_TEXT: [number, number, number] = [48, 50, 51];
-const COLOR_SECONDARY: [number, number, number] = [114, 114, 114];
-const COLOR_HINT: [number, number, number] = [153, 153, 153];
+const COLOR_TEXT: [number, number, number] = [20, 20, 20];
 
 async function fetchFontBase64(url: string): Promise<string> {
   const res = await fetch(url);
@@ -49,6 +49,8 @@ export async function downloadReportPdf(insight: InsightResult, schools: Matched
   const marginX = 16;
   const contentWidth = pageWidth - marginX * 2;
   const bottomLimit = pageHeight - 16;
+  const bulletIndent = 5;
+  const bulletTextIndent = 10;
   let y = 20;
 
   function ensureSpace(next: number) {
@@ -58,50 +60,69 @@ export async function downloadReportPdf(insight: InsightResult, schools: Matched
     }
   }
 
-  function heading(text: string, size = 13) {
+  // Title section — luôn hồng, đậm, đứng đầu mỗi khối nội dung.
+  function sectionTitle(text: string, size = 13) {
+    y += 3;
     ensureSpace(size * 0.6 + 4);
     doc.setFont("Roboto", "bold");
     doc.setFontSize(size);
     doc.setTextColor(...COLOR_PRIMARY);
     doc.text(text, marginX, y);
-    y += size * 0.55 + 2;
+    y += size * 0.55 + 3;
   }
 
-  function paragraph(text: string, opts?: { size?: number; bold?: boolean; color?: [number, number, number]; indent?: number }) {
+  // Dòng chữ thường (đen) — dùng cho câu dẫn/số liệu tổng quan, KHÔNG phải danh sách.
+  function plainText(text: string, opts?: { size?: number; bold?: boolean }) {
     const size = opts?.size ?? 10.5;
-    const indent = opts?.indent ?? 0;
     doc.setFont("Roboto", opts?.bold ? "bold" : "normal");
     doc.setFontSize(size);
-    doc.setTextColor(...(opts?.color ?? COLOR_TEXT));
-    const lines = doc.splitTextToSize(text, contentWidth - indent);
+    doc.setTextColor(...COLOR_TEXT);
+    const lines = doc.splitTextToSize(text, contentWidth);
     for (const line of lines) {
-      ensureSpace(size * 0.5);
-      doc.text(line, marginX + indent, y);
-      y += size * 0.5;
+      ensureSpace(size * 0.55);
+      doc.text(line, marginX, y);
+      y += size * 0.55;
     }
   }
 
-  function divider() {
-    ensureSpace(4);
-    doc.setDrawColor(230, 230, 230);
-    doc.line(marginX, y, pageWidth - marginX, y);
-    y += 5;
+  // Explanation dạng bullet point (theo yêu cầu user 24/09) — "•" + hanging indent, đen.
+  function bullet(text: string, opts?: { size?: number; bold?: boolean }) {
+    const size = opts?.size ?? 10.5;
+    doc.setFont("Roboto", opts?.bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    doc.setTextColor(...COLOR_TEXT);
+    const lines = doc.splitTextToSize(text, contentWidth - bulletTextIndent);
+    lines.forEach((line: string, i: number) => {
+      ensureSpace(size * 0.55);
+      if (i === 0) doc.text("•", marginX + bulletIndent, y);
+      doc.text(line, marginX + bulletTextIndent, y);
+      y += size * 0.55;
+    });
+  }
+
+  function link(text: string) {
+    const size = 9.5;
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(size);
+    doc.setTextColor(...COLOR_PRIMARY);
+    ensureSpace(size * 0.55);
+    doc.text(text, marginX + bulletTextIndent, y);
+    y += size * 0.55;
   }
 
   // ---------- Title ----------
   doc.setFont("Roboto", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(19);
   doc.setTextColor(...COLOR_PRIMARY);
   doc.text("March — Kết quả tư vấn du học", marginX, y);
-  y += 8;
-  paragraph(`Xuất ngày ${new Date().toLocaleDateString("vi-VN")}`, { size: 9, color: COLOR_HINT });
-  y += 2;
+  y += 7;
+  plainText(`Xuất ngày ${new Date().toLocaleDateString("vi-VN")}`, { size: 9 });
 
   // ---------- Điểm hồ sơ ----------
-  heading("Điểm hồ sơ");
-  paragraph(`Điểm tổng: ${formatScore10(insight.overallScore)}/10 — ${CLASSIFICATION_LABELS[insight.classification]}`, { bold: true });
-  paragraph(insight.overallComment, { color: COLOR_SECONDARY });
-  y += 2;
+  sectionTitle("Điểm hồ sơ");
+  plainText(`Điểm tổng: ${formatScore10(insight.overallScore)}/10 — ${CLASSIFICATION_LABELS[insight.classification]}`, { bold: true });
+  y += 1;
+  bullet(insight.overallComment);
 
   const rankedIds = insight.criteria
     .filter((c) => (c.id === "academic" || c.id === "language" || c.id === "certificate") && c.status === "evaluated" && c.impactScore != null)
@@ -109,41 +130,38 @@ export async function downloadReportPdf(insight: InsightResult, schools: Matched
     .map((c) => c.id);
 
   if (rankedIds.length > 0) {
-    paragraph("Ưu tiên cải thiện:", { bold: true });
+    y += 2;
+    plainText("Ưu tiên cải thiện:", { bold: true });
     rankedIds.forEach((id, i) => {
       const c = insight.criteria.find((cr) => cr.id === id);
-      paragraph(`#${i + 1} ${CRITERION_LABELS[id]} — ${formatScore10(c?.score ?? 0)}/10`, { indent: 4, color: COLOR_SECONDARY });
+      bullet(`#${i + 1} ${CRITERION_LABELS[id]} — ${formatScore10(c?.score ?? 0)}/10`);
     });
-    y += 2;
   }
 
   // ---------- Việc cần làm tiếp theo ----------
-  divider();
-  heading("Việc cần làm tiếp theo");
+  sectionTitle("Việc cần làm tiếp theo");
   if (insight.nextActions.length === 0) {
-    paragraph("Chưa có đề xuất — AI hiện không khả dụng.", { color: COLOR_HINT });
+    bullet("Chưa có đề xuất — AI hiện không khả dụng.");
   } else {
     insight.nextActions.forEach((action) => {
       const priority = priorityLabelFor(action, rankedIds);
-      paragraph(`[${priority}] ${action}`, { indent: 2 });
+      bullet(`[${priority}] ${action}`);
     });
   }
-  y += 2;
 
   // ---------- Danh sách chương trình phù hợp ----------
-  divider();
-  heading(`Danh sách chương trình phù hợp (${schools.length})`);
+  sectionTitle(`Danh sách chương trình phù hợp (${schools.length})`);
   if (schools.length === 0) {
-    paragraph("Chưa có chương trình phù hợp trong catalog.", { color: COLOR_HINT });
+    bullet("Chưa có chương trình phù hợp trong catalog.");
   } else {
     schools.forEach((s, i) => {
-      ensureSpace(16);
-      paragraph(`${i + 1}. ${s.university} — ${s.program}`, { bold: true, size: 11 });
-      paragraph(`Điểm phù hợp: ${s.matchScore}/100 — ${MATCH_LEVEL_LABELS[s.matchLevel]} (${s.verdictLine})`, { indent: 4, color: COLOR_SECONDARY });
-      paragraph(`Học phí + sinh hoạt phí ước tính: ${formatEur(s.budgetSuggestion.totalEstimatedPerYearEur)}/năm`, { indent: 4, color: COLOR_SECONDARY });
-      s.summary.forEach((line) => paragraph(line, { indent: 4, size: 9.5, color: COLOR_SECONDARY }));
-      paragraph(s.officialUrl, { indent: 4, size: 9, color: COLOR_PRIMARY });
-      y += 3;
+      ensureSpace(18);
+      if (i > 0) y += 3;
+      plainText(`${i + 1}. ${s.university} — ${s.program}`, { bold: true, size: 11.5 });
+      bullet(`Điểm phù hợp: ${s.matchScore}/100 — ${MATCH_LEVEL_LABELS[s.matchLevel]} (${s.verdictLine})`);
+      bullet(`Học phí + sinh hoạt phí ước tính: ${formatEur(s.budgetSuggestion.totalEstimatedPerYearEur)}/năm`);
+      s.summary.forEach((line) => bullet(line, { size: 9.5 }));
+      link(s.officialUrl);
     });
   }
 
