@@ -11,7 +11,6 @@ import type { InsightResult, MatchedProgram, Profile } from "@/types/domain";
 
 export default function SchoolsPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [insight, setInsight] = useState<InsightResult | null>(null);
   const [schools, setSchools] = useState<MatchedProgram[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +62,6 @@ export default function SchoolsPage() {
     const cached = loadSchoolsIfMatches(p);
     // Defer past the effect's synchronous pass (react-hooks/set-state-in-effect).
     queueMicrotask(() => {
-      setProfile(p);
       setInsight(loadInsightIfMatches(p));
     });
     if (cached) {
@@ -144,37 +142,24 @@ export default function SchoolsPage() {
         </div>
       )}
 
-      {/* Tải xuống — đặt cuối cùng, ngay trên CTA (theo yêu cầu user 24/09, trước đây ở đầu
-          trang). */}
-      {insight && (
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="rounded-lg px-4 py-2 text-action-s-bold disabled:opacity-50"
-            style={{ border: "1px solid var(--momo-brand-primary-tonal)", color: "var(--momo-brand-primary)" }}
-          >
-            {downloading ? "Đang tạo file..." : "Tải xuống (PDF)"}
-          </button>
-        </div>
-      )}
-
-      <div className="mt-4 flex gap-3">
+      {/* 2 CTA cuối trang (theo yêu cầu user 24/09) — Quay lại (phụ) + Tải xuống (chính,
+          primary), thay cho bộ 3 nút Chỉnh hồ sơ/Tìm lại/Tải xuống trước đó. */}
+      <div className="mt-6 flex gap-3">
         <button
           onClick={() => router.push("/")}
           className="rounded-md px-4 py-2 text-body-default-regular"
           style={{ border: "1px solid var(--momo-border-default)", color: "var(--momo-text-default)" }}
         >
-          Chỉnh hồ sơ
+          Quay lại
         </button>
         <button
-          onClick={() => profile && search(profile)}
-          disabled={loading || !profile}
-          className="flex-1 rounded-md py-2.5 text-action-default-bold disabled:opacity-50"
-          style={{ background: "var(--momo-brand-primary)", color: "#ffffff" }}
+          type="button"
+          onClick={handleDownload}
+          disabled={!insight || downloading}
+          className="flex-1 rounded-lg py-2.5 text-action-default-bold disabled:opacity-50"
+          style={{ background: "var(--momo-brand-primary)", color: "#ffffff", boxShadow: "0 4px 16px rgba(235,47,150,0.24)" }}
         >
-          Tìm lại
+          {downloading ? "Đang tạo file..." : "Tải xuống (PDF)"}
         </button>
       </div>
     </AppShell>
