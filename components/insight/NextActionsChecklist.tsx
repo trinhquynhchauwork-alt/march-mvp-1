@@ -1,40 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import type { Criterion, Classification } from "@/types/domain";
-import { CRITERION_LABELS } from "@/lib/config/criterionLabels";
-import { inferActionCriterionId, inferActionTag } from "@/lib/config/actionTags";
+import type { Criterion } from "@/types/domain";
+import { inferActionTag, priorityLabelFor, PRIORITY_STYLE } from "@/lib/config/actionTags";
 
-type PriorityLabel = "CẦN" | "NÊN CÓ" | "TÙY CHỌN";
-
-const PRIORITY_STYLE: Record<PriorityLabel, { color: string; background: string }> = {
-  CẦN: { color: "var(--momo-brand-primary)", background: "var(--momo-brand-primary-tonal)" },
-  "NÊN CÓ": { color: "var(--momo-brand-primary-dark)", background: "var(--momo-bg-surface)" },
-  "TÙY CHỌN": { color: "var(--momo-text-secondary)", background: "var(--momo-bg-surface)" },
-};
-
-// Rule-based priority mapping (mục 5.15.2, v4.1) — bám thứ hạng Impact Score (mục 5.14) của
-// tiêu chí liên quan, KHÔNG để AI tự quyết định mức ưu tiên (AC-UX13).
-function priorityLabelFor(actionText: string, rankedIds: string[]): PriorityLabel {
-  const id = inferActionCriterionId(actionText);
-  if (!id) return "TÙY CHỌN";
-  const rank = rankedIds.indexOf(id);
-  if (rank === 0) return "CẦN";
-  if (rank === 1) return "NÊN CÓ";
-  return "TÙY CHỌN";
-}
-
-// Next Actions dạng checklist + Xuất file (mục 5.15). Tick chỉ lưu tạm trên client (mục
-// 5.15.2/1.3) — không có tài khoản/lưu tiến độ lâu dài ở MVP.
+// Next Actions dạng checklist (mục 5.15). Tick chỉ lưu tạm trên client (mục 5.15.2/1.3) —
+// không có tài khoản/lưu tiến độ lâu dài ở MVP. Xuất file giờ nằm ở P3 (mục bug 24/09 —
+// gộp chung với danh sách trường thành 1 file duy nhất), component này chỉ còn hiển thị.
 export default function NextActionsChecklist({
   nextActions,
-  overallScore,
-  classification,
   priorityCriteria,
 }: {
   nextActions: string[];
-  overallScore: number;
-  classification: Classification;
   priorityCriteria: Criterion[];
 }) {
   const [checked, setChecked] = useState<boolean[]>(() => nextActions.map(() => false));
@@ -50,62 +27,11 @@ export default function NextActionsChecklist({
     setChecked((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
   }
 
-  async function handleDownload() {
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF();
-    let y = 18;
-
-    doc.setFontSize(16);
-    doc.text("March — AI Profile Insight", 14, y);
-    y += 10;
-
-    doc.setFontSize(12);
-    doc.text(`Overall Score: ${overallScore}/100 (${classification})`, 14, y);
-    y += 10;
-
-    doc.setFontSize(13);
-    doc.text("Uu tien cai thien", 14, y);
-    y += 7;
-    doc.setFontSize(10);
-    const ranked = priorityCriteria
-      .filter((c) => c.status === "evaluated")
-      .sort((a, b) => (b.impactScore ?? 0) - (a.impactScore ?? 0));
-    ranked.forEach((c, i) => {
-      doc.text(`#${i + 1} ${CRITERION_LABELS[c.id]} - ${c.score}/100`, 18, y);
-      y += 6;
-    });
-    y += 4;
-
-    doc.setFontSize(13);
-    doc.text("Next Actions", 14, y);
-    y += 7;
-    doc.setFontSize(10);
-    nextActions.forEach((action, i) => {
-      const box = checked[i] ? "[x]" : "[ ]";
-      const priority = priorityLabelFor(action, rankedIds);
-      const lines = doc.splitTextToSize(`${box} [${priority}] ${action}`, 180);
-      doc.text(lines, 18, y);
-      y += 6 * lines.length;
-    });
-
-    doc.save("march-insight-result.pdf");
-  }
-
   return (
     <div className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
-      <div className="flex items-center justify-between">
-        <h2 className="text-header-m-bold" style={{ color: "var(--momo-text-default)" }}>
-          Việc cần làm tiếp theo
-        </h2>
-        <button
-          type="button"
-          onClick={handleDownload}
-          className="rounded-lg px-3 py-1.5 text-action-s-bold"
-          style={{ border: "1px solid var(--momo-brand-primary-tonal)", color: "var(--momo-brand-primary)" }}
-        >
-          Tải xuống
-        </button>
-      </div>
+      <h2 className="text-header-m-bold" style={{ color: "var(--momo-text-default)" }}>
+        Việc cần làm tiếp theo
+      </h2>
 
       {nextActions.length === 0 ? (
         <p className="mt-2 text-body-default-regular" style={{ color: "var(--momo-text-hint)" }}>

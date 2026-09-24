@@ -23,3 +23,23 @@ export function inferActionTag(actionText: string): string | null {
   const id = inferActionCriterionId(actionText);
   return id ? CRITERION_LABELS[id] : null;
 }
+
+export type PriorityLabel = "CẦN" | "NÊN CÓ" | "TÙY CHỌN";
+
+// Rule-based priority mapping (mục 5.15.2, v4.1) — bám thứ hạng Impact Score (mục 5.14) của
+// tiêu chí liên quan, KHÔNG để AI tự quyết định mức ưu tiên (AC-UX13). Dùng chung giữa
+// NextActionsChecklist (UI) và lib/pdf/exportReport (PDF) — một nguồn logic duy nhất.
+export function priorityLabelFor(actionText: string, rankedIds: string[]): PriorityLabel {
+  const id = inferActionCriterionId(actionText);
+  if (!id) return "TÙY CHỌN";
+  const rank = rankedIds.indexOf(id);
+  if (rank === 0) return "CẦN";
+  if (rank === 1) return "NÊN CÓ";
+  return "TÙY CHỌN";
+}
+
+export const PRIORITY_STYLE: Record<PriorityLabel, { color: string; background: string }> = {
+  CẦN: { color: "var(--momo-brand-primary)", background: "var(--momo-brand-primary-tonal)" },
+  "NÊN CÓ": { color: "var(--momo-brand-primary-dark)", background: "var(--momo-bg-surface)" },
+  "TÙY CHỌN": { color: "var(--momo-text-secondary)", background: "var(--momo-bg-surface)" },
+};

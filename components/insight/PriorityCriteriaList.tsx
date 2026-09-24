@@ -28,7 +28,7 @@ export default function PriorityCriteriaList({ criteria }: { criteria: Criterion
             <path d="M7 6.2v4M7 4.1h.01" stroke="var(--momo-brand-primary)" strokeWidth="1.4" strokeLinecap="round" />
           </svg>
           <span
-            className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-64 -translate-x-1/2 rounded-lg p-2.5 text-description-default-regular opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+            className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 max-w-[80vw] rounded-lg p-2.5 text-description-default-regular opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100"
             style={{ background: "var(--momo-text-default)", color: "#ffffff" }}
           >
             {TOOLTIP_TEXT}
@@ -41,7 +41,7 @@ export default function PriorityCriteriaList({ criteria }: { criteria: Criterion
       <div className="mt-3 space-y-3">
         {evaluated.map((c, i) => (
           <div key={c.id} className={i > 0 ? "pt-3" : ""} style={i > 0 ? { borderTop: "1px solid var(--momo-border-default)" } : undefined}>
-            <div className="flex items-center justify-between text-body-default-regular">
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-body-default-regular">
               <span className="flex items-center gap-2" style={{ color: "var(--momo-text-default)", fontWeight: 500 }}>
                 <span
                   className="rounded-full px-2 py-0.5 text-action-xxs-bold"

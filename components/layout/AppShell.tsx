@@ -24,7 +24,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         className="sticky top-0 z-20"
         style={{ background: "var(--momo-bg-default)", borderBottom: "1px solid var(--momo-border-default)" }}
       >
-        <div className="mx-auto flex h-16 max-w-[1120px] items-center justify-between gap-4 px-6">
+        <div className="mx-auto flex h-16 max-w-[1120px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
           <div className="flex shrink-0 items-center gap-2">
             <span
               className="flex h-8 w-8 items-center justify-center rounded-lg text-header-default-bold"
@@ -70,7 +70,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1120px] px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </div>
   );
 }

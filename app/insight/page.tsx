@@ -8,7 +8,6 @@ import ScoreBadge from "@/components/ScoreBadge";
 import ScoreDonut from "@/components/ScoreDonut";
 import CriterionCard from "@/components/insight/CriterionCard";
 import PriorityCriteriaList from "@/components/insight/PriorityCriteriaList";
-import NextActionsChecklist from "@/components/insight/NextActionsChecklist";
 import { loadProfile, loadInsightIfMatches, saveInsight } from "@/lib/clientStorage";
 import type { InsightResult } from "@/types/domain";
 
@@ -117,52 +116,41 @@ export default function InsightPage() {
         </div>
       </div>
 
-      {/* Bố cục 2 cột (mục 5.14/5.15) — trái: Ưu tiên cải thiện + nhận xét AI; phải sticky:
-          Việc cần làm tiếp theo. Đúng march-mvp-demo-desktop.html (`.layout-2col`). */}
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-4">
-          {/* Khối 1 — Ưu tiên cải thiện (mục 5.14) */}
-          <PriorityCriteriaList criteria={insight.criteria} />
+      {/* Bố cục 1 cột (mục 5.14) — "Việc cần làm tiếp theo" đã dời sang P3, đặt sau danh sách
+          trường (theo yêu cầu user 24/09), nên P2 không còn cột phải sticky riêng nữa. */}
+      <div className="space-y-4">
+        {/* Khối 1 — Ưu tiên cải thiện (mục 5.14) */}
+        <PriorityCriteriaList criteria={insight.criteria} />
 
-          {/* Khối 2 — Nhận xét bổ sung từ AI, thu gọn mặc định (mục 5.14) */}
-          <details className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
-            <summary className="cursor-pointer list-none text-body-default-regular" style={{ color: "var(--momo-brand-primary)", fontWeight: 600 }}>
-              Xem nhận xét bổ sung từ AI ▾
-            </summary>
-            <p className="mt-2 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
-              Các tiêu chí dưới đây do AI đánh giá để bổ sung ngữ cảnh, không tính vào Điểm tổng.
-            </p>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {aiCriteria.map((c) => (
-                <CriterionCard key={c.id} criterion={c} />
-              ))}
-            </div>
-          </details>
+        {/* Khối 2 — Nhận xét bổ sung từ AI, thu gọn mặc định (mục 5.14) */}
+        <details className="rounded-xl p-4" style={{ background: "var(--momo-bg-default)", border: "1px solid var(--momo-border-default)" }}>
+          <summary className="cursor-pointer list-none text-body-default-regular" style={{ color: "var(--momo-brand-primary)", fontWeight: 600 }}>
+            Xem nhận xét bổ sung từ AI ▾
+          </summary>
+          <p className="mt-2 text-description-default-regular" style={{ color: "var(--momo-text-secondary)" }}>
+            Các tiêu chí dưới đây do AI đánh giá để bổ sung ngữ cảnh, không tính vào Điểm tổng.
+          </p>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {aiCriteria.map((c) => (
+              <CriterionCard key={c.id} criterion={c} />
+            ))}
+          </div>
+        </details>
 
-          <button
-            onClick={() => router.push("/schools")}
-            className="rounded-lg px-5 py-2.5 text-action-default-bold"
-            style={{ background: "var(--momo-brand-primary)", color: "#ffffff", boxShadow: "0 4px 16px rgba(235,47,150,0.24)" }}
-          >
-            Xem trường phù hợp →
-          </button>
-        </div>
-
-        <div className="lg:sticky lg:top-24">
-          {/* Next Actions checklist + xuất file (mục 5.15) */}
-          <NextActionsChecklist
-            nextActions={insight.nextActions}
-            overallScore={insight.overallScore}
-            classification={insight.classification}
-            priorityCriteria={insight.criteria}
-          />
-
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             onClick={() => router.push("/")}
-            className="mt-3 w-full rounded-md px-4 py-2 text-body-default-regular"
+            className="rounded-md px-4 py-2 text-body-default-regular"
             style={{ border: "1px solid var(--momo-border-default)", color: "var(--momo-text-default)" }}
           >
             Chỉnh hồ sơ
+          </button>
+          <button
+            onClick={() => router.push("/schools")}
+            className="flex-1 rounded-lg px-5 py-2.5 text-action-default-bold"
+            style={{ background: "var(--momo-brand-primary)", color: "#ffffff", boxShadow: "0 4px 16px rgba(235,47,150,0.24)" }}
+          >
+            Xem trường phù hợp →
           </button>
         </div>
       </div>

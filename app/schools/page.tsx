@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation";
 import AppShell from "@/components/layout/AppShell";
 import PageHead from "@/components/layout/PageHead";
 import SchoolCard from "@/components/schools/SchoolCard";
+import NextActionsChecklist from "@/components/insight/NextActionsChecklist";
 import { loadProfile, loadInsightIfMatches, loadSchoolsIfMatches, saveSchools } from "@/lib/clientStorage";
-import type { MatchedProgram, Profile } from "@/types/domain";
+import type { InsightResult, MatchedProgram, Profile } from "@/types/domain";
 
 export default function SchoolsPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [insight, setInsight] = useState<InsightResult | null>(null);
   const [schools, setSchools] = useState<MatchedProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   // Major Fit (mục 6.6.2) nguồn AI Evaluation — dùng lại điểm đã tính ở Insight (giờ là
   // field top-level InsightResult.majorFitScore, mục 7.2), không gọi thêm AI (P3 "không
@@ -22,8 +25,9 @@ export default function SchoolsPage() {
     setLoading(true);
     setMessage(null);
     try {
-      const insight = loadInsightIfMatches(p);
-      const majorFitScore = insight?.majorFitScore ?? null;
+      const cachedInsight = loadInsightIfMatches(p);
+      setInsight(cachedInsight);
+      const majorFitScore = cachedInsight?.majorFitScore ?? null;
 
       const res = await fetch("/api/schools/search", {
         method: "POST",
@@ -58,7 +62,10 @@ export default function SchoolsPage() {
     }
     const cached = loadSchoolsIfMatches(p);
     // Defer past the effect's synchronous pass (react-hooks/set-state-in-effect).
-    queueMicrotask(() => setProfile(p));
+    queueMicrotask(() => {
+      setProfile(p);
+      setInsight(loadInsightIfMatches(p));
+    });
     if (cached) {
       queueMicrotask(() => {
         setSchools(cached);
@@ -71,6 +78,20 @@ export default function SchoolsPage() {
     queueMicrotask(() => search(p));
   }, [router, search]);
 
+  async function handleDownload() {
+    if (!insight || downloading) return;
+    setDownloading(true);
+    try {
+      const { downloadReportPdf } = await import("@/lib/pdf/exportReport");
+      await downloadReportPdf(insight, schools);
+    } catch (err) {
+      console.error("[schools] export PDF error:", err);
+      setMessage("Không tạo được file PDF. Vui lòng thử lại.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <AppShell>
       <PageHead
@@ -78,6 +99,20 @@ export default function SchoolsPage() {
         description="Kết quả từ kho dữ liệu trường — sắp xếp theo mức độ phù hợp."
         meta={schools.length > 0 ? `${schools.length} chương trình · sắp xếp theo điểm phù hợp` : undefined}
       />
+
+      {insight && (
+        <div className="mb-5 flex justify-end">
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="rounded-lg px-4 py-2 text-action-s-bold disabled:opacity-50"
+            style={{ border: "1px solid var(--momo-brand-primary-tonal)", color: "var(--momo-brand-primary)" }}
+          >
+            {downloading ? "Đang tạo file..." : "Tải xuống (PDF)"}
+          </button>
+        </div>
+      )}
 
       {!loading && schools.length > 1 && (
         <div
@@ -112,6 +147,14 @@ export default function SchoolsPage() {
           {schools.map((s) => (
             <SchoolCard key={s.programId} school={s} />
           ))}
+        </div>
+      )}
+
+      {/* Việc cần làm tiếp theo (mục 5.15) — dời từ P2 sang đây, đặt sau danh sách trường
+          (theo yêu cầu user 24/09), tải xuống chung 1 file PDF với danh sách trường ở trên. */}
+      {!loading && insight && (
+        <div className="mt-6">
+          <NextActionsChecklist nextActions={insight.nextActions} priorityCriteria={insight.criteria} />
         </div>
       )}
 

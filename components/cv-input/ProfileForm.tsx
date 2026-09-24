@@ -312,7 +312,7 @@ export default function ProfileForm({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label className={LABEL_CLASS} style={LABEL_STYLE}>
               GPA <span style={{ color: "var(--momo-brand-primary)" }}>*</span>
@@ -360,7 +360,7 @@ export default function ProfileForm({
 
       {/* Chứng chỉ ngoại ngữ — optional nhưng ảnh hưởng trực tiếp Language Score (mục 4.2.2) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label className={LABEL_CLASS} style={LABEL_STYLE}>
               Tiếng Anh <OptionalTag />
@@ -390,7 +390,7 @@ export default function ProfileForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label className={LABEL_CLASS} style={LABEL_STYLE}>
               Tiếng Đức <OptionalTag />
@@ -478,14 +478,14 @@ export default function ProfileForm({
               {form.academicCertificates.map((cert, i) => (
                 <div key={i} className="flex gap-2">
                   <input
-                    className={`${INPUT_CLASS} mt-0 w-1/2`}
+                    className={`${INPUT_CLASS} mt-0 min-w-0 flex-1`}
                     style={INPUT_STYLE}
                     placeholder="Tên (GRE, GMAT...)"
                     value={cert.name}
                     onChange={(e) => updateCertificate(i, "name", e.target.value)}
                   />
                   <input
-                    className={`${INPUT_CLASS} mt-0 w-1/2`}
+                    className={`${INPUT_CLASS} mt-0 min-w-0 flex-1`}
                     style={INPUT_STYLE}
                     placeholder="Điểm"
                     value={cert.score}
@@ -494,7 +494,7 @@ export default function ProfileForm({
                   <button
                     type="button"
                     onClick={() => removeCertificate(i)}
-                    className="rounded-lg px-3 text-body-default-regular"
+                    className="shrink-0 rounded-lg px-3 text-body-default-regular"
                     style={{ border: "1px solid var(--momo-border-default)", color: "var(--momo-text-secondary)" }}
                   >
                     Xoá
